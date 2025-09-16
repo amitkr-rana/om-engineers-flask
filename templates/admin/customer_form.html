@@ -1,0 +1,104 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{% if customer %}Edit Customer{% else %}Add Customer{% endif %} - Admin Panel{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6);">
+    <h1>{% if customer %}Edit Customer{% else %}Add New Customer{% endif %}</h1>
+    <a href="{{ url_for('admin.customers') }}" class="btn btn-secondary">← Back to Customers</a>
+</div>
+
+<div class="card" style="max-width: 600px;">
+    <form method="POST"
+          action="{% if customer %}{{ url_for('admin.update_customer', customer_id=customer.id) }}{% else %}{{ url_for('admin.create_customer') }}{% endif %}">
+
+        <div class="form-group">
+            <label for="name" class="form-label">Full Name *</label>
+            <input type="text" id="name" name="name" class="form-input"
+                   value="{{ customer.name if customer else '' }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="email" class="form-label">Email Address *</label>
+            <input type="email" id="email" name="email" class="form-input"
+                   value="{{ customer.email if customer else '' }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="phone" class="form-label">Phone Number *</label>
+            <input type="tel" id="phone" name="phone" class="form-input"
+                   value="{{ customer.phone if customer else '' }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="address" class="form-label">Address</label>
+            <textarea id="address" name="address" class="form-input" rows="3"
+                      placeholder="Complete address including city and state">{{ customer.address if customer else '' }}</textarea>
+        </div>
+
+        {% if customer %}
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-bottom: var(--space-6); padding: var(--space-4); background: var(--gray-50); border-radius: var(--border-radius);">
+            <div>
+                <strong>Created:</strong> {{ customer.created_at.strftime('%m/%d/%Y %I:%M %p') }}
+            </div>
+            <div>
+                <strong>Last Updated:</strong> {{ customer.updated_at.strftime('%m/%d/%Y %I:%M %p') if customer.updated_at else 'Never' }}
+            </div>
+        </div>
+        {% endif %}
+
+        <div style="display: flex; gap: var(--space-4); justify-content: flex-end;">
+            <a href="{{ url_for('admin.customers') }}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+                {% if customer %}Update Customer{% else %}Create Customer{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+
+{% if customer and customer.appointments %}
+<div style="margin-top: var(--space-8);">
+    <h3>Customer Appointments ({{ customer.appointments|length }})</h3>
+    <div class="card">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Service</th>
+                    <th>Date & Time</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for appointment in customer.appointments %}
+                <tr>
+                    <td>#{{ appointment.id }}</td>
+                    <td>{{ appointment.service.name if appointment.service else 'Unknown' }}</td>
+                    <td>
+                        {{ appointment.appointment_date.strftime('%m/%d/%Y') }}<br>
+                        <small>{{ appointment.appointment_time.strftime('%I:%M %p') }}</small>
+                    </td>
+                    <td>
+                        <span style="background-color:
+                            {% if appointment.status.value == 'pending' %}var(--warning-color)
+                            {% elif appointment.status.value == 'confirmed' %}var(--primary-color)
+                            {% elif appointment.status.value == 'completed' %}var(--success-color)
+                            {% elif appointment.status.value == 'cancelled' %}var(--error-color)
+                            {% else %}var(--gray-400){% endif %};
+                            color: var(--white); padding: var(--space-1) var(--space-2); border-radius: var(--border-radius-sm); font-size: var(--font-size-xs);">
+                            {{ appointment.status.value.title() }}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('admin.edit_appointment', appointment_id=appointment.id) }}"
+                           class="btn btn-sm btn-outline">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

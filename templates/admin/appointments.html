@@ -1,0 +1,172 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Appointments - Admin Panel{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6);">
+    <h1>Appointments Management</h1>
+    <a href="{{ url_for('admin.new_appointment') }}" class="btn btn-primary">📅 Add Appointment</a>
+</div>
+
+<!-- Filters -->
+<div class="filters">
+    <form method="GET" style="display: flex; gap: var(--space-4); align-items: end; flex-wrap: wrap; width: 100%;">
+        <div style="min-width: 150px;">
+            <label for="status" class="form-label">Status</label>
+            <select id="status" name="status" class="form-input">
+                <option value="">All Statuses</option>
+                {% for status in statuses %}
+                <option value="{{ status.value }}" {% if status.value == current_status %}selected{% endif %}>
+                    {{ status.value.title() }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div style="min-width: 150px;">
+            <label for="date" class="form-label">Date</label>
+            <input type="date" id="date" name="date" class="form-input" value="{{ current_date }}">
+        </div>
+        <button type="submit" class="btn btn-primary">Filter</button>
+        {% if current_status or current_date %}
+        <a href="{{ url_for('admin.appointments') }}" class="btn btn-secondary">Clear</a>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Appointments Table -->
+{% if appointments.items %}
+<div class="card">
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Customer</th>
+                <th>Service</th>
+                <th>Date & Time</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for detail in appointment_details %}
+            {% set appointment = detail.appointment %}
+            {% set customer = detail.customer %}
+            {% set service = detail.service %}
+            <tr>
+                <td>#{{ appointment.id }}</td>
+                <td>
+                    <div>
+                        <strong>{{ customer.name if customer else 'Unknown' }}</strong>
+                        {% if customer %}
+                        <div style="font-size: var(--font-size-xs); color: var(--gray-600);">
+                            {{ customer.email }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </td>
+                <td>
+                    <div style="display: flex; align-items: center; gap: var(--space-2);">
+                        {% if service %}
+                        <span style="font-size: var(--font-size-sm);">{{ service.icon }}</span>
+                        <span>{{ service.name }}</span>
+                        {% else %}
+                        <span style="color: var(--gray-500);">Unknown Service</span>
+                        {% endif %}
+                    </div>
+                </td>
+                <td>
+                    <div>
+                        <strong>{{ appointment.appointment_date.strftime('%m/%d/%Y') }}</strong>
+                        <div style="font-size: var(--font-size-xs); color: var(--gray-600);">
+                            {{ appointment.appointment_time.strftime('%I:%M %p') }}
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <span style="background-color: var(--gray-200); color: var(--gray-700); padding: var(--space-1) var(--space-2); border-radius: var(--border-radius-sm); font-size: var(--font-size-xs);">
+                        {{ appointment.appointment_type.value.title() }}
+                    </span>
+                </td>
+                <td>
+                    <span style="background-color:
+                        {% if appointment.status.value == 'pending' %}var(--warning-color)
+                        {% elif appointment.status.value == 'confirmed' %}var(--primary-color)
+                        {% elif appointment.status.value == 'completed' %}var(--success-color)
+                        {% elif appointment.status.value == 'cancelled' %}var(--error-color)
+                        {% else %}var(--gray-400){% endif %};
+                        color: var(--white); padding: var(--space-1) var(--space-2); border-radius: var(--border-radius-sm); font-size: var(--font-size-xs);">
+                        {{ appointment.status.value.title() }}
+                    </span>
+                </td>
+                <td>{{ appointment.created_at.strftime('%m/%d/%Y') }}</td>
+                <td>
+                    <div style="display: flex; gap: var(--space-2);">
+                        <a href="{{ url_for('admin.edit_appointment', appointment_id=appointment.id) }}"
+                           class="btn btn-sm btn-outline">✏️ Edit</a>
+                        <form method="POST" action="{{ url_for('admin.delete_appointment', appointment_id=appointment.id) }}"
+                              style="display: inline;"
+                              onsubmit="return confirm('Are you sure you want to delete this appointment?')">
+                            <button type="submit" class="btn btn-sm btn-danger">🗑️ Delete</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if appointments.pages > 1 %}
+<div class="pagination">
+    {% if appointments.has_prev %}
+        <a href="{{ url_for('admin.appointments', page=appointments.prev_num, status=current_status, date=current_date) }}">« Previous</a>
+    {% endif %}
+
+    {% for page_num in appointments.iter_pages() %}
+        {% if page_num %}
+            {% if page_num != appointments.page %}
+                <a href="{{ url_for('admin.appointments', page=page_num, status=current_status, date=current_date) }}">{{ page_num }}</a>
+            {% else %}
+                <span class="current">{{ page_num }}</span>
+            {% endif %}
+        {% else %}
+            <span>…</span>
+        {% endif %}
+    {% endfor %}
+
+    {% if appointments.has_next %}
+        <a href="{{ url_for('admin.appointments', page=appointments.next_num, status=current_status, date=current_date) }}">Next »</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="card" style="text-align: center; padding: var(--space-16);">
+    <div style="font-size: var(--font-size-3xl); margin-bottom: var(--space-4);">📅</div>
+    <h3 style="color: var(--gray-600); margin-bottom: var(--space-4);">No appointments found</h3>
+    {% if current_status or current_date %}
+    <p style="color: var(--gray-500); margin-bottom: var(--space-6);">
+        No appointments match your filters.
+    </p>
+    <a href="{{ url_for('admin.appointments') }}" class="btn btn-secondary">Clear Filters</a>
+    {% else %}
+    <p style="color: var(--gray-500); margin-bottom: var(--space-6);">
+        Get started by adding your first appointment.
+    </p>
+    <a href="{{ url_for('admin.new_appointment') }}" class="btn btn-primary">Add First Appointment</a>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Summary -->
+<div style="margin-top: var(--space-8); padding: var(--space-4); background: var(--gray-50); border-radius: var(--border-radius);">
+    <p style="margin: 0; color: var(--gray-600); font-size: var(--font-size-sm);">
+        Showing {{ appointments.items|length }} of {{ appointments.total }} appointments
+        {% if current_status %}with status "{{ current_status }}"{% endif %}
+        {% if current_date %}on {{ current_date }}{% endif %}
+    </p>
+</div>
+{% endblock %}

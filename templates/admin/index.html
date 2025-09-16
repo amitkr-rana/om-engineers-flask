@@ -1,0 +1,168 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Admin Dashboard - {{ config.APP_NAME }}{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-8);">
+    <h1>Dashboard</h1>
+    <div style="display: flex; gap: var(--space-4);">
+        <button onclick="refreshStats()" class="btn btn-secondary btn-sm">🔄 Refresh</button>
+        <form method="POST" action="{{ url_for('admin.reset_database') }}" style="display: inline;"
+              onsubmit="return confirm('Are you sure you want to reset the entire database? This action cannot be undone!')">
+            <button type="submit" class="btn btn-danger btn-sm">🗑️ Reset Database</button>
+        </form>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number" id="customers-count">{{ stats.customers or 0 }}</div>
+        <div style="color: var(--gray-600);">Total Customers</div>
+        <div style="margin-top: var(--space-2);">
+            <a href="{{ url_for('admin.customers') }}" class="btn btn-sm btn-outline">View All</a>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-number" id="services-count">{{ stats.services or 0 }}</div>
+        <div style="color: var(--gray-600);">Total Services</div>
+        <div style="margin-top: var(--space-2);">
+            <a href="{{ url_for('admin.services') }}" class="btn btn-sm btn-outline">View All</a>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-number" id="appointments-count">{{ stats.appointments or 0 }}</div>
+        <div style="color: var(--gray-600);">Total Appointments</div>
+        <div style="margin-top: var(--space-2);">
+            <a href="{{ url_for('admin.appointments') }}" class="btn btn-sm btn-outline">View All</a>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div style="background: var(--gray-50); padding: var(--space-6); border-radius: var(--border-radius-lg); margin-bottom: var(--space-8);">
+    <h3 style="margin-bottom: var(--space-4);">Quick Actions</h3>
+    <div style="display: flex; gap: var(--space-4); flex-wrap: wrap;">
+        <a href="{{ url_for('admin.new_customer') }}" class="btn btn-primary">➕ Add Customer</a>
+        <a href="{{ url_for('admin.new_service') }}" class="btn btn-primary">🔧 Add Service</a>
+        <a href="{{ url_for('admin.new_appointment') }}" class="btn btn-primary">📅 Add Appointment</a>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-8); margin-top: var(--space-8);">
+    <!-- Recent Customers -->
+    <div>
+        <h3 style="margin-bottom: var(--space-4);">Recent Customers</h3>
+        {% if recent_customers %}
+        <div class="card">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for customer in recent_customers %}
+                    <tr>
+                        <td>{{ customer.name }}</td>
+                        <td>{{ customer.email }}</td>
+                        <td>{{ customer.created_at.strftime('%m/%d/%Y') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="card" style="text-align: center; padding: var(--space-8); color: var(--gray-500);">
+            No customers yet
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Recent Appointments -->
+    <div>
+        <h3 style="margin-bottom: var(--space-4);">Recent Appointments</h3>
+        {% if recent_appointments %}
+        <div class="card">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for appointment in recent_appointments %}
+                    <tr>
+                        <td>#{{ appointment.id }}</td>
+                        <td>
+                            <span style="background-color:
+                                {% if appointment.status.value == 'pending' %}var(--warning-color)
+                                {% elif appointment.status.value == 'confirmed' %}var(--primary-color)
+                                {% elif appointment.status.value == 'completed' %}var(--success-color)
+                                {% elif appointment.status.value == 'cancelled' %}var(--error-color)
+                                {% else %}var(--gray-400){% endif %};
+                                color: var(--white); padding: var(--space-1) var(--space-2); border-radius: var(--border-radius-sm); font-size: var(--font-size-xs);">
+                                {{ appointment.status.value.title() }}
+                            </span>
+                        </td>
+                        <td>{{ appointment.appointment_date.strftime('%m/%d/%Y') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="card" style="text-align: center; padding: var(--space-8); color: var(--gray-500);">
+            No appointments yet
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Database Info -->
+<div style="margin-top: var(--space-12); padding: var(--space-6); background: var(--primary-color); color: var(--white); border-radius: var(--border-radius-lg);">
+    <h3 style="color: var(--white); margin-bottom: var(--space-4);">💾 Database Information</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-4); opacity: 0.9;">
+        <div>
+            <strong>Database Type:</strong> SQLite
+        </div>
+        <div>
+            <strong>Location:</strong> om_engineers.db
+        </div>
+        <div>
+            <strong>Environment:</strong> Development
+        </div>
+        <div>
+            <strong>Last Updated:</strong> <span id="last-updated">{{ moment().format('MM/DD/YYYY HH:mm') if moment else 'Unknown' }}</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function refreshStats() {
+    fetch('{{ url_for("admin.api_stats") }}')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('customers-count').textContent = data.customers || 0;
+            document.getElementById('services-count').textContent = data.services || 0;
+            document.getElementById('appointments-count').textContent = data.appointments || 0;
+            document.getElementById('last-updated').textContent = new Date().toLocaleString();
+        })
+        .catch(error => {
+            console.error('Error fetching stats:', error);
+        });
+}
+
+// Auto-refresh stats every 30 seconds
+setInterval(refreshStats, 30000);
+</script>
+{% endblock %}

@@ -16,10 +16,12 @@ def create_app():
     from routes.main import main_bp
     from routes.appointments import appointments_bp
     from routes.services import services_bp
+    from routes.admin import admin_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(appointments_bp, url_prefix='/appointments')
     app.register_blueprint(services_bp, url_prefix='/services')
+    app.register_blueprint(admin_bp, url_prefix='/admin')
 
     return app
 

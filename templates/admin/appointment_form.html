@@ -1,0 +1,125 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{% if appointment %}Edit Appointment{% else %}Add Appointment{% endif %} - Admin Panel{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6);">
+    <h1>{% if appointment %}Edit Appointment{% else %}Add New Appointment{% endif %}</h1>
+    <a href="{{ url_for('admin.appointments') }}" class="btn btn-secondary">← Back to Appointments</a>
+</div>
+
+<div class="card" style="max-width: 600px;">
+    <form method="POST"
+          action="{% if appointment %}{{ url_for('admin.update_appointment', appointment_id=appointment.id) }}{% else %}{{ url_for('admin.create_appointment') }}{% endif %}">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4);">
+            <div class="form-group">
+                <label for="customer_id" class="form-label">Customer *</label>
+                <select id="customer_id" name="customer_id" class="form-input" required>
+                    <option value="">Select Customer</option>
+                    {% for customer in customers %}
+                    <option value="{{ customer.id }}"
+                            {% if appointment and appointment.customer_id == customer.id %}selected{% endif %}>
+                        {{ customer.name }} ({{ customer.email }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="service_id" class="form-label">Service *</label>
+                <select id="service_id" name="service_id" class="form-input" required>
+                    <option value="">Select Service</option>
+                    {% for service in services %}
+                    <option value="{{ service.id }}"
+                            {% if appointment and appointment.service_id == service.id %}selected{% endif %}>
+                        {{ service.icon }} {{ service.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4);">
+            <div class="form-group">
+                <label for="appointment_date" class="form-label">Appointment Date *</label>
+                <input type="date" id="appointment_date" name="appointment_date" class="form-input"
+                       value="{{ appointment.appointment_date.strftime('%Y-%m-%d') if appointment else '' }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="appointment_time" class="form-label">Appointment Time *</label>
+                <input type="time" id="appointment_time" name="appointment_time" class="form-input"
+                       value="{{ appointment.appointment_time.strftime('%H:%M') if appointment else '' }}" required>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4);">
+            <div class="form-group">
+                <label for="appointment_type" class="form-label">Appointment Type *</label>
+                <select id="appointment_type" name="appointment_type" class="form-input" required>
+                    <option value="">Select Type</option>
+                    <option value="onsite" {% if appointment and appointment.appointment_type.value == 'onsite' %}selected{% endif %}>On-site Visit</option>
+                    <option value="pickup" {% if appointment and appointment.appointment_type.value == 'pickup' %}selected{% endif %}>Pickup & Drop</option>
+                    <option value="consultation" {% if appointment and appointment.appointment_type.value == 'consultation' %}selected{% endif %}>Consultation</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="status" class="form-label">Status *</label>
+                <select id="status" name="status" class="form-input" required>
+                    <option value="pending" {% if not appointment or appointment.status.value == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="confirmed" {% if appointment and appointment.status.value == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                    <option value="completed" {% if appointment and appointment.status.value == 'completed' %}selected{% endif %}>Completed</option>
+                    <option value="cancelled" {% if appointment and appointment.status.value == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="address" class="form-label">Service Address</label>
+            <textarea id="address" name="address" class="form-input" rows="3"
+                      placeholder="Address where service will be performed (for on-site visits)">{{ appointment.address if appointment else '' }}</textarea>
+            <small style="color: var(--gray-600); font-size: var(--font-size-xs);">
+                Required for on-site appointments
+            </small>
+        </div>
+
+        <div class="form-group">
+            <label for="notes" class="form-label">Notes</label>
+            <textarea id="notes" name="notes" class="form-input" rows="4"
+                      placeholder="Additional notes about the appointment">{{ appointment.notes if appointment else '' }}</textarea>
+        </div>
+
+        {% if appointment %}
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-bottom: var(--space-6); padding: var(--space-4); background: var(--gray-50); border-radius: var(--border-radius);">
+            <div>
+                <strong>Created:</strong> {{ appointment.created_at.strftime('%m/%d/%Y %I:%M %p') }}
+            </div>
+            <div>
+                <strong>Last Updated:</strong> {{ appointment.updated_at.strftime('%m/%d/%Y %I:%M %p') if appointment.updated_at else 'Never' }}
+            </div>
+        </div>
+        {% endif %}
+
+        <div style="display: flex; gap: var(--space-4); justify-content: flex-end;">
+            <a href="{{ url_for('admin.appointments') }}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+                {% if appointment %}Update Appointment{% else %}Create Appointment{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+
+{% if not customers %}
+<div style="margin-top: var(--space-6); padding: var(--space-4); background: var(--warning-color); color: var(--white); border-radius: var(--border-radius);">
+    <strong>⚠️ No customers found!</strong> You need to <a href="{{ url_for('admin.new_customer') }}" style="color: var(--white); text-decoration: underline;">create customers</a> before creating appointments.
+</div>
+{% endif %}
+
+{% if not services %}
+<div style="margin-top: var(--space-6); padding: var(--space-4); background: var(--warning-color); color: var(--white); border-radius: var(--border-radius);">
+    <strong>⚠️ No active services found!</strong> You need to <a href="{{ url_for('admin.new_service') }}" style="color: var(--white); text-decoration: underline;">create services</a> before creating appointments.
+</div>
+{% endif %}
+{% endblock %}

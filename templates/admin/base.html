@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin Panel - {{ config.APP_NAME }}{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <style>
+        /* Admin-specific styles */
+        .admin-header {
+            background-color: var(--gray-800);
+            color: var(--white);
+            padding: var(--space-4) 0;
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        .admin-nav {
+            display: flex;
+            gap: var(--space-6);
+            align-items: center;
+        }
+
+        .admin-nav a {
+            color: var(--gray-300);
+            text-decoration: none;
+            padding: var(--space-2) var(--space-4);
+            border-radius: var(--border-radius);
+            transition: all 0.2s ease;
+        }
+
+        .admin-nav a:hover,
+        .admin-nav a.active {
+            background-color: var(--primary-color);
+            color: var(--white);
+        }
+
+        .admin-content {
+            padding: var(--space-8) 0;
+            min-height: calc(100vh - 200px);
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--white);
+            box-shadow: var(--shadow-sm);
+            border-radius: var(--border-radius-lg);
+            overflow: hidden;
+        }
+
+        .admin-table th,
+        .admin-table td {
+            padding: var(--space-3) var(--space-4);
+            text-align: left;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .admin-table th {
+            background-color: var(--gray-50);
+            font-weight: var(--font-weight-semibold);
+            color: var(--gray-700);
+        }
+
+        .admin-table tr:hover {
+            background-color: var(--gray-50);
+        }
+
+        .btn-sm {
+            padding: var(--space-1) var(--space-3);
+            font-size: var(--font-size-sm);
+            min-height: auto;
+        }
+
+        .btn-danger {
+            background-color: var(--error-color);
+            border-color: var(--error-color);
+            color: var(--white);
+        }
+
+        .btn-danger:hover {
+            background-color: #dc2626;
+            border-color: #dc2626;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--space-6);
+            margin-bottom: var(--space-8);
+        }
+
+        .stat-card {
+            background: var(--white);
+            padding: var(--space-6);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-sm);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: var(--font-size-3xl);
+            font-weight: var(--font-weight-bold);
+            color: var(--primary-color);
+            margin-bottom: var(--space-2);
+        }
+
+        .filters {
+            background: var(--gray-50);
+            padding: var(--space-4);
+            border-radius: var(--border-radius);
+            margin-bottom: var(--space-6);
+            display: flex;
+            gap: var(--space-4);
+            align-items: end;
+            flex-wrap: wrap;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: var(--space-2);
+            margin-top: var(--space-6);
+        }
+
+        .pagination a,
+        .pagination span {
+            padding: var(--space-2) var(--space-3);
+            border: 1px solid var(--gray-300);
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            color: var(--gray-700);
+        }
+
+        .pagination .current {
+            background-color: var(--primary-color);
+            color: var(--white);
+            border-color: var(--primary-color);
+        }
+
+        .pagination a:hover {
+            background-color: var(--gray-50);
+        }
+
+        @media (max-width: 768px) {
+            .admin-nav {
+                flex-direction: column;
+                gap: var(--space-2);
+            }
+
+            .filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .admin-table {
+                font-size: var(--font-size-sm);
+            }
+
+            .admin-table th,
+            .admin-table td {
+                padding: var(--space-2);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Admin Header -->
+    <header class="admin-header">
+        <div class="container">
+            <div class="admin-nav">
+                <h2 style="color: var(--white); margin: 0;">🔧 Admin Panel</h2>
+                <a href="{{ url_for('admin.index') }}" class="{% if request.endpoint == 'admin.index' %}active{% endif %}">Dashboard</a>
+                <a href="{{ url_for('admin.customers') }}" class="{% if 'customers' in request.endpoint %}active{% endif %}">Customers</a>
+                <a href="{{ url_for('admin.services') }}" class="{% if 'services' in request.endpoint %}active{% endif %}">Services</a>
+                <a href="{{ url_for('admin.appointments') }}" class="{% if 'appointments' in request.endpoint %}active{% endif %}">Appointments</a>
+                <div style="margin-left: auto;">
+                    <a href="{{ url_for('main.index') }}" style="color: var(--gray-400);">← Back to Site</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="admin-content">
+        <div class="container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages" style="position: static; margin-bottom: var(--space-6);">
+                        {% for category, message in messages %}
+                            <div class="flash-message flash-{{ category }}" role="alert">
+                                <span class="flash-message-text">{{ message }}</span>
+                                <button class="flash-message-close" aria-label="Close message">&times;</button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer style="background-color: var(--gray-100); padding: var(--space-4) 0; text-align: center; color: var(--gray-600);">
+        <div class="container">
+            <p style="margin: 0; font-size: var(--font-size-sm);">
+                🚧 Development Admin Panel - {{ config.APP_NAME }}
+            </p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

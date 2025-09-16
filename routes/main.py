@@ -232,5 +232,6 @@ def utility_processor():
     return dict(
         format_date=format_date,
         format_time=format_time,
-        format_phone=format_phone
+        format_phone=format_phone,
+        current_year=datetime.now().year
     )

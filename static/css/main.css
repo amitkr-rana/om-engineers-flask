@@ -733,6 +733,10 @@ a:hover {
     font-size: var(--font-size-base);
 }
 
+.footer-contact p {
+    margin-bottom: var(--space-2);
+}
+
 .footer-link {
     color: var(--gray-300);
     text-decoration: none;

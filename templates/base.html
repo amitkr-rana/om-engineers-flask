@@ -29,6 +29,7 @@
                     <span class="nav-brand-text">{{ config.APP_NAME }}</span>
                 </a>
 
+                {% if request.endpoint != 'main.index' %}
                 <button class="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
                     <span class="nav-toggle-bar"></span>
                     <span class="nav-toggle-bar"></span>
@@ -40,6 +41,7 @@
                     <a href="{{ url_for('services.index') }}" class="nav-link">Services</a>
                     <a href="{{ url_for('main.contact') }}" class="nav-link">Contact</a>
                 </div>
+                {% endif %}
             </div>
         </nav>
     </header>
@@ -83,11 +85,16 @@
                             ✉️ {{ config.CONTACT_EMAIL }}
                         </a>
                     </p>
+                    <p>
+                        <span class="footer-link">
+                            📍 {{ config.CONTACT_ADDRESS }}
+                        </span>
+                    </p>
                 </div>
             </div>
 
             <div class="footer-bottom">
-                <p>&copy; 2024 {{ config.APP_NAME }}. All rights reserved.</p>
+                <p>&copy; {{ current_year }} {{ config.APP_NAME }}. All rights reserved.</p>
             </div>
         </div>
     </footer>

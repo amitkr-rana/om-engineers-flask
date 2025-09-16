@@ -1,0 +1,100 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{% if service %}Edit Service{% else %}Add Service{% endif %} - Admin Panel{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6);">
+    <h1>{% if service %}Edit Service{% else %}Add New Service{% endif %}</h1>
+    <a href="{{ url_for('admin.services') }}" class="btn btn-secondary">← Back to Services</a>
+</div>
+
+<div class="card" style="max-width: 600px;">
+    <form method="POST"
+          action="{% if service %}{{ url_for('admin.update_service', service_id=service.id) }}{% else %}{{ url_for('admin.create_service') }}{% endif %}">
+
+        <div class="form-group">
+            <label for="name" class="form-label">Service Name *</label>
+            <input type="text" id="name" name="name" class="form-input"
+                   value="{{ service.name if service else '' }}" required
+                   placeholder="e.g., Air Conditioner Repair">
+        </div>
+
+        <div class="form-group">
+            <label for="description" class="form-label">Description *</label>
+            <textarea id="description" name="description" class="form-input" rows="4" required
+                      placeholder="Detailed description of the service">{{ service.description if service else '' }}</textarea>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4);">
+            <div class="form-group">
+                <label for="category" class="form-label">Category *</label>
+                <select id="category" name="category" class="form-input" required>
+                    <option value="">Select Category</option>
+                    <option value="Air Conditioning" {% if service and service.category == 'Air Conditioning' %}selected{% endif %}>Air Conditioning</option>
+                    <option value="Refrigeration" {% if service and service.category == 'Refrigeration' %}selected{% endif %}>Refrigeration</option>
+                    <option value="Electrical" {% if service and service.category == 'Electrical' %}selected{% endif %}>Electrical</option>
+                    <option value="Plumbing" {% if service and service.category == 'Plumbing' %}selected{% endif %}>Plumbing</option>
+                    <option value="General Repair" {% if service and service.category == 'General Repair' %}selected{% endif %}>General Repair</option>
+                    <option value="Maintenance" {% if service and service.category == 'Maintenance' %}selected{% endif %}>Maintenance</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="icon" class="form-label">Icon</label>
+                <input type="text" id="icon" name="icon" class="form-input"
+                       value="{{ service.icon if service else '🔧' }}"
+                       placeholder="🔧">
+                <small style="color: var(--gray-600); font-size: var(--font-size-xs);">
+                    Use emoji or leave default
+                </small>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4);">
+            <div class="form-group">
+                <label for="duration" class="form-label">Duration *</label>
+                <input type="text" id="duration" name="duration" class="form-input"
+                       value="{{ service.duration if service else '' }}" required
+                       placeholder="e.g., 1-2 hours, 30 minutes">
+            </div>
+
+            <div class="form-group">
+                <label for="price_range" class="form-label">Price Range *</label>
+                <input type="text" id="price_range" name="price_range" class="form-input"
+                       value="{{ service.price_range if service else '' }}" required
+                       placeholder="e.g., ₹500-1000, Contact for Quote">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">
+                <input type="checkbox" name="is_active"
+                       {% if not service or service.is_active %}checked{% endif %}
+                       style="margin-right: var(--space-2);">
+                Active Service
+            </label>
+            <small style="color: var(--gray-600); font-size: var(--font-size-xs); display: block; margin-top: var(--space-1);">
+                Only active services are visible to customers
+            </small>
+        </div>
+
+        {% if service %}
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-bottom: var(--space-6); padding: var(--space-4); background: var(--gray-50); border-radius: var(--border-radius);">
+            <div>
+                <strong>Created:</strong> {{ service.created_at.strftime('%m/%d/%Y %I:%M %p') }}
+            </div>
+            <div>
+                <strong>Last Updated:</strong> {{ service.updated_at.strftime('%m/%d/%Y %I:%M %p') if service.updated_at else 'Never' }}
+            </div>
+        </div>
+        {% endif %}
+
+        <div style="display: flex; gap: var(--space-4); justify-content: flex-end;">
+            <a href="{{ url_for('admin.services') }}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+                {% if service %}Update Service{% else %}Create Service{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
