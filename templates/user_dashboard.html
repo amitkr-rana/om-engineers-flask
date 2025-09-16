@@ -3,43 +3,69 @@
 {% block title %}Dashboard - {{ config.APP_NAME }}{% endblock %}
 
 {% block content %}
-<div class="dashboard-container">
-    <div class="dashboard-header">
-        <div class="container">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <h1>Welcome to {{ config.APP_NAME }}!</h1>
-                    <p style="color: var(--gray-600); margin: 0;">You have successfully logged in with OTP verification.</p>
+<div class="dashboard-content">
+    <div class="container">
+        <!-- Customer Profile Section -->
+        <div class="dashboard-profile">
+            <div class="profile-avatar">
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='40' fill='%23e2e8f0'/%3E%3Cpath d='M40 40c7.364 0 13.333-5.969 13.333-13.333S47.364 13.334 40 13.334s-13.333 5.969-13.333 13.333S32.636 40 40 40zm0 6.667c-9.205 0-16.667 7.462-16.667 16.666h33.334c0-9.204-7.462-16.666-16.667-16.666z' fill='%2394a3b8'/%3E%3C/svg%3E" alt="Profile Avatar" class="avatar-image">
+            </div>
+            <h1 class="profile-name">{{ customer_name }}</h1>
+            <p class="profile-status">Verified Customer</p>
+        </div>
+
+        <!-- Upcoming Appointments -->
+        <div class="dashboard-section">
+            <h2 class="section-title">Upcoming Appointments</h2>
+            <div class="appointment-card">
+                <div class="appointment-info">
+                    <div class="appointment-date">
+                        <span class="date-day">Tomorrow, 2:00 PM</span>
+                    </div>
+                    <h3 class="appointment-title">HVAC System Check</h3>
+                    <p class="appointment-technician">Technician: Mark Johnson</p>
                 </div>
-                <div>
-                    <a href="{{ url_for('main.index') }}" class="btn btn-outline">← Back to Home</a>
+                <div class="appointment-image">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' fill='%23f1f5f9' rx='6'/%3E%3Cpath d='M15 11h30a4 4 0 0 1 4 4v30a4 4 0 0 1-4 4H15a4 4 0 0 1-4-4V15a4 4 0 0 1 4-4z' fill='%23cbd5e1'/%3E%3Ccircle cx='30' cy='26' r='6' fill='%2394a3b8'/%3E%3Cpath d='M19 38h22v3H19z' fill='%2394a3b8'/%3E%3C/svg%3E" alt="HVAC Unit" class="service-image">
                 </div>
             </div>
         </div>
-    </div>
+        <br>
 
-    <div class="dashboard-content">
-        <div class="container">
-            <div class="success-message">
-                <div class="success-icon">✅</div>
-                <h2>Login Successful!</h2>
-                <p>Your phone number has been verified successfully. This is a placeholder dashboard.</p>
+        <!-- Service History -->
+        <div class="dashboard-section">
+            <h2 class="section-title">Service History</h2>
 
-                <div style="margin-top: var(--space-8);">
-                    <h3>Next Steps:</h3>
-                    <ul style="text-align: left; max-width: 400px; margin: 0 auto;">
-                        <li>Browse our available services</li>
-                        <li>Schedule a repair appointment</li>
-                        <li>Track your service requests</li>
-                        <li>Manage your account settings</li>
-                    </ul>
+            <div class="history-item">
+                <div class="history-icon">
+                    <div class="service-icon plumbing">🔧</div>
                 </div>
-
-                <div class="dashboard-actions">
-                    <a href="{{ url_for('services.index') }}" class="btn btn-primary">Browse Services</a>
-                    <a href="{{ url_for('main.request_quotation') }}" class="btn btn-outline">Request Quote</a>
+                <div class="history-details">
+                    <h3 class="history-title">Plumbing Repair</h3>
+                    <p class="history-date">Completed on July 15, 2024</p>
                 </div>
+                <div class="history-arrow">›</div>
             </div>
+            <div class="history-item">
+                <div class="history-icon">
+                    <div class="service-icon electrical">⚡</div>
+                </div>
+                <div class="history-details">
+                    <h3 class="history-title">Electrical Inspection</h3>
+                    <p class="history-date">Completed on June 20, 2024</p>
+                </div>
+                <div class="history-arrow">›</div>
+            </div>
+        </div>
+        <br>
+        <br>
+        <br>
+        <hr>
+        <!-- Schedule Appointment Button -->
+        <div class="schedule-appointment-sticky">
+            <a href="{{ url_for('main.get_started') }}" class="btn-schedule">
+                + Schedule Appointment
+            </a>
         </div>
     </div>
 </div>
@@ -47,93 +73,405 @@
 
 {% block head %}
 <style>
-.dashboard-container {
-    min-height: calc(100vh - var(--header-height));
-}
-
-.dashboard-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: var(--space-8) 0;
-}
-
-.dashboard-header h1 {
-    color: white;
-    margin: 0 0 var(--space-2) 0;
-}
-
 .dashboard-content {
-    padding: var(--space-12) 0;
-}
-
-.success-message {
-    text-align: center;
-    max-width: 600px;
-    margin: 0 auto;
-    background: white;
-    padding: var(--space-12);
-    border-radius: var(--border-radius-lg);
-    box-shadow: var(--shadow-lg);
-}
-
-.success-icon {
-    font-size: 64px;
-    margin-bottom: var(--space-4);
-}
-
-.success-message h2 {
-    color: var(--primary-color);
-    margin-bottom: var(--space-4);
-}
-
-.success-message p {
-    color: var(--gray-600);
-    font-size: var(--font-size-lg);
-    margin-bottom: var(--space-8);
-}
-
-.success-message h3 {
-    color: var(--gray-800);
-    margin-bottom: var(--space-4);
-}
-
-.success-message ul {
-    color: var(--gray-700);
-    line-height: 1.6;
-    margin-bottom: var(--space-8);
-}
-
-.success-message li {
-    margin-bottom: var(--space-2);
-}
-
-.dashboard-actions {
+    min-height: calc(100vh - var(--header-height));
+    min-height: calc(100dvh - var(--header-height));
+    background-color: var(--white);
+    padding: var(--space-4) 0;
     display: flex;
-    gap: var(--space-4);
+    align-items: flex-start;
     justify-content: center;
-    flex-wrap: wrap;
 }
 
-@media (max-width: 768px) {
-    .dashboard-header div {
-        flex-direction: column;
-        text-align: center;
-        gap: var(--space-4);
+.dashboard-content .container {
+    max-width: 600px;
+    width: 100%;
+    height: auto;
+}
+
+/* Profile Section */
+.dashboard-profile {
+    text-align: center;
+    margin-bottom: var(--space-6);
+}
+
+.profile-avatar {
+    margin-bottom: var(--space-3);
+}
+
+.avatar-image {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 3px solid var(--gray-200);
+}
+
+.profile-name {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--gray-900);
+    margin-bottom: var(--space-1);
+}
+
+.profile-status {
+    color: var(--gray-600);
+    font-size: var(--font-size-base);
+    margin: 0;
+}
+
+/* Dashboard Sections */
+.dashboard-section {
+    margin-bottom: var(--space-6);
+}
+
+.dashboard-section:last-of-type {
+    margin-bottom: var(--space-4);
+}
+
+.section-title {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--gray-900);
+    margin-bottom: var(--space-3);
+}
+
+/* Upcoming Appointments */
+.appointment-card {
+    background: var(--white);
+    border-radius: var(--border-radius-lg);
+    padding: var(--space-4);
+    box-shadow: var(--shadow-md);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.appointment-info {
+    flex: 1;
+}
+
+.appointment-date .date-day {
+    color: var(--gray-600);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+}
+
+.appointment-title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--gray-900);
+    margin: var(--space-1) 0;
+}
+
+.appointment-technician {
+    color: var(--gray-600);
+    font-size: var(--font-size-sm);
+    margin: 0;
+}
+
+.appointment-image {
+    flex-shrink: 0;
+}
+
+.service-image {
+    width: 60px;
+    height: 60px;
+    border-radius: var(--border-radius);
+}
+
+/* Service History */
+.history-item {
+    display: flex;
+    align-items: center;
+    padding: var(--space-3);
+    background: var(--gray-50);
+    border-radius: var(--border-radius);
+    margin-bottom: var(--space-2);
+    transition: background-color 0.2s;
+}
+
+.history-item:last-child {
+    margin-bottom: 0;
+}
+
+.history-item:hover {
+    background: var(--gray-100);
+}
+
+.history-icon {
+    margin-right: var(--space-3);
+}
+
+.service-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-lg);
+    color: white;
+}
+
+.service-icon.plumbing {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+}
+
+.service-icon.electrical {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.history-details {
+    flex: 1;
+}
+
+.history-title {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--gray-900);
+    margin: 0;
+}
+
+.history-date {
+    color: var(--gray-600);
+    font-size: var(--font-size-xs);
+    margin: 0;
+}
+
+.history-arrow {
+    font-size: var(--font-size-xl);
+    color: var(--gray-400);
+    font-weight: var(--font-weight-bold);
+}
+
+/* Schedule Appointment Button */
+.schedule-appointment-sticky {
+    position: sticky;
+    bottom: var(--space-3);
+    margin-top: var(--space-4);
+    z-index: 100;
+}
+
+.btn-schedule {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    background: var(--primary-color);
+    color: white;
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    text-align: center;
+    padding: var(--space-4);
+    border-radius: var(--border-radius-xl);
+    text-decoration: none;
+    transition: background-color 0.2s;
+    box-shadow: var(--shadow-lg);
+    min-height: var(--min-touch-target);
+    border-top: 1px solid var(--gray-200);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1), var(--shadow-lg);
+}
+
+.btn-schedule:hover {
+    background: var(--primary-dark);
+    text-decoration: none;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 480px) {
+    .dashboard-content {
+        padding: var(--space-3) 0;
+        align-items: flex-start;
+        min-height: calc(100vh - var(--header-height));
+        min-height: calc(100dvh - var(--header-height));
     }
 
-    .success-message {
-        margin: var(--space-4);
-        padding: var(--space-8);
+    .avatar-image {
+        width: 70px;
+        height: 70px;
     }
 
-    .dashboard-actions {
-        flex-direction: column;
-        align-items: center;
+    .profile-name {
+        font-size: var(--font-size-xl);
     }
 
-    .dashboard-actions .btn {
-        width: 100%;
-        max-width: 300px;
+    .dashboard-profile {
+        margin-bottom: var(--space-4);
+    }
+
+    .dashboard-section {
+        margin-bottom: var(--space-4);
+    }
+
+    .dashboard-section:last-of-type {
+        margin-bottom: var(--space-3);
+    }
+
+    .section-title {
+        font-size: var(--font-size-lg);
+        margin-bottom: var(--space-2);
+    }
+
+    .appointment-card {
+        padding: var(--space-3);
+    }
+
+    .service-image {
+        width: 50px;
+        height: 50px;
+    }
+
+    .service-icon {
+        width: 36px;
+        height: 36px;
+        font-size: var(--font-size-base);
+    }
+
+    .history-item {
+        padding: var(--space-2);
+        margin-bottom: var(--space-2);
+    }
+
+    .schedule-appointment-sticky {
+        bottom: var(--space-2);
+        margin-top: var(--space-3);
+    }
+}
+
+/* Height optimization for shorter screens */
+@media (max-height: 700px) {
+    .dashboard-content {
+        padding: var(--space-2) 0;
+        align-items: flex-start;
+    }
+
+    .dashboard-profile {
+        margin-bottom: var(--space-3);
+    }
+
+    .profile-avatar {
+        margin-bottom: var(--space-2);
+    }
+
+    .avatar-image {
+        width: 60px;
+        height: 60px;
+    }
+
+    .profile-name {
+        font-size: var(--font-size-lg);
+        margin-bottom: 0;
+    }
+
+    .profile-status {
+        font-size: var(--font-size-sm);
+    }
+
+    .dashboard-section {
+        margin-bottom: var(--space-3);
+    }
+
+    .dashboard-section:last-of-type {
+        margin-bottom: var(--space-2);
+    }
+
+    .section-title {
+        font-size: var(--font-size-base);
+        margin-bottom: var(--space-2);
+    }
+
+    .appointment-card {
+        padding: var(--space-2);
+    }
+
+    .appointment-title {
+        font-size: var(--font-size-base);
+        margin: var(--space-1) 0;
+    }
+
+    .service-image {
+        width: 40px;
+        height: 40px;
+    }
+
+    .history-item {
+        padding: var(--space-2);
+        margin-bottom: var(--space-1);
+    }
+
+    .service-icon {
+        width: 32px;
+        height: 32px;
+        font-size: var(--font-size-base);
+    }
+
+    .history-title {
+        font-size: var(--font-size-sm);
+    }
+
+    .schedule-appointment-sticky {
+        bottom: var(--space-2);
+        margin-top: var(--space-2);
+    }
+}
+
+/* Very short screens optimization */
+@media (max-height: 600px) {
+    .dashboard-content {
+        padding: var(--space-1) 0;
+    }
+
+    .dashboard-profile {
+        margin-bottom: var(--space-2);
+    }
+
+    .avatar-image {
+        width: 50px;
+        height: 50px;
+    }
+
+    .profile-name {
+        font-size: var(--font-size-base);
+        margin-bottom: 0;
+    }
+
+    .profile-status {
+        font-size: var(--font-size-xs);
+    }
+
+    .dashboard-section {
+        margin-bottom: var(--space-2);
+    }
+
+    .dashboard-section:last-of-type {
+        margin-bottom: var(--space-1);
+    }
+
+    .section-title {
+        font-size: var(--font-size-sm);
+        margin-bottom: var(--space-1);
+    }
+
+    .appointment-card,
+    .history-item {
+        padding: var(--space-1);
+    }
+
+    .service-image {
+        width: 32px;
+        height: 32px;
+    }
+
+    .service-icon {
+        width: 24px;
+        height: 24px;
+        font-size: var(--font-size-sm);
+    }
+
+    .schedule-appointment-sticky {
+        bottom: var(--space-1);
+        margin-top: var(--space-1);
     }
 }
 </style>

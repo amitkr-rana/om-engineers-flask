@@ -6,6 +6,12 @@
     <meta name="description" content="{{ config.APP_DESCRIPTION }}">
     <title>{% block title %}{{ config.APP_NAME }}{% endblock %}</title>
 
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+    <link rel="icon" type="image/svg+xml" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16x16.svg') }}">
+    <link rel="icon" type="image/svg+xml" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32x32.svg') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/favicon-32x32.svg') }}">
+
     <!-- Mobile-first CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 

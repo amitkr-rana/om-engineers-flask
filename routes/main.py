@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from datetime import datetime, date, time
 from models import Customer, Service, Appointment, AppointmentType
 from database import db
@@ -205,7 +205,23 @@ def terms():
 @main_bp.route('/dashboard')
 def dashboard():
     """User dashboard after successful OTP login"""
-    return render_template('user_dashboard.html')
+    # Get customer information from session
+    customer_name = session.get('customer_name', 'Guest')
+    customer_phone = session.get('customer_phone', '')
+    customer_id = session.get('customer_id')
+
+    # Try to get more detailed customer info if available
+    customer = None
+    if customer_id:
+        try:
+            customer = Customer.query.get(customer_id)
+        except:
+            pass
+
+    return render_template('user_dashboard.html',
+                         customer_name=customer_name,
+                         customer_phone=customer_phone,
+                         customer=customer)
 
 @main_bp.context_processor
 def utility_processor():

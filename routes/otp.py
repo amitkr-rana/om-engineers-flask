@@ -1,6 +1,8 @@
-from flask import Blueprint, request, jsonify, render_template, flash, redirect, url_for
+from flask import Blueprint, request, jsonify, render_template, flash, redirect, url_for, session
 from services.otp_service import OTPService
 from models.otp import OTP
+from models.customer_db import Customer
+from database import db
 
 otp_bp = Blueprint('otp', __name__)
 
@@ -10,11 +12,18 @@ def send_otp():
     try:
         data = request.get_json() if request.is_json else request.form
         phone_number = data.get('phone_number', '').strip()
+        customer_name = data.get('customer_name', '').strip()
 
         if not phone_number:
             return jsonify({
                 'success': False,
                 'message': 'Phone number is required'
+            }), 400
+
+        if not customer_name:
+            return jsonify({
+                'success': False,
+                'message': 'Customer name is required'
             }), 400
 
         # Send OTP
@@ -38,6 +47,7 @@ def verify_otp():
         data = request.get_json() if request.is_json else request.form
         phone_number = data.get('phone_number', '').strip()
         otp_code = data.get('otp_code', '').strip()
+        customer_name = data.get('customer_name', '').strip()
 
         if not phone_number or not otp_code:
             return jsonify({
@@ -45,8 +55,33 @@ def verify_otp():
                 'message': 'Phone number and OTP code are required'
             }), 400
 
+        if not customer_name:
+            return jsonify({
+                'success': False,
+                'message': 'Customer name is required'
+            }), 400
+
         # Verify OTP
         success, message = OTPService.verify_otp(phone_number, otp_code)
+
+        if success:
+            # Create or update customer record
+            try:
+                customer, created = Customer.get_or_create(
+                    name=customer_name,
+                    email="",  # Will be updated later if needed
+                    phone=phone_number,
+                    address=""  # Will be updated later if needed
+                )
+
+                # Store customer ID in session
+                session['customer_id'] = customer.id
+                session['customer_name'] = customer.name
+                session['customer_phone'] = customer.phone
+
+            except Exception as e:
+                # If customer creation fails, still allow login but log the error
+                print(f"Error creating/updating customer: {str(e)}")
 
         return jsonify({
             'success': success,

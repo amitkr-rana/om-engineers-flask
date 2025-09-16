@@ -9,8 +9,13 @@
         <form id="otpLoginForm" class="otp-form">
             <!-- Phone Input Section -->
             <div id="phoneSection" class="form-section active">
+                <label class="input-label section-label">Enter your details to begin</label>
+
+                <div class="name-input-group">
+                    <input type="text" id="customerName" name="customer_name" class="name-input" placeholder="Enter your full name" required>
+                </div>
+
                 <div class="phone-input-group">
-                    <label for="phoneNumber" class="input-label">Enter phone number to get started</label>
                     <div class="phone-input-container">
                         <div class="country-selector">
                             <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMTgiIHZpZXdCb3g9IjAgMCAyNCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjYiIGZpbGw9IiNGRjY2MDAiLz4KPHJlY3QgeT0iNiIgd2lkdGg9IjI0IiBoZWlnaHQ9IjYiIGZpbGw9IiNGRkZGRkYiLz4KPHJlY3QgeT0iMTIiIHdpZHRoPSIyNCIgaGVpZ2h0PSI2IiBmaWxsPSIjMTM4ODA4Ii8+Cjwvc3ZnPgo=" alt="IN" class="flag-icon">
@@ -106,7 +111,7 @@
 }
 
 /* Form Elements */
-.phone-input-group, .otp-input-group {
+.name-input-group, .phone-input-group, .otp-input-group {
     margin-bottom: var(--space-6);
 }
 
@@ -117,6 +122,12 @@
     color: var(--gray-900);
     margin-bottom: var(--space-3);
     text-align: center;
+}
+
+.section-label {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    margin-bottom: var(--space-4);
 }
 
 .phone-input-container {
@@ -164,6 +175,26 @@
 }
 
 .phone-input::placeholder {
+    color: var(--gray-400);
+}
+
+.name-input {
+    width: 100%;
+    border: 2px solid var(--gray-300);
+    border-radius: var(--border-radius-lg);
+    padding: var(--space-4);
+    font-size: var(--font-size-base);
+    outline: none;
+    background: var(--white);
+    transition: all 0.2s;
+}
+
+.name-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.name-input::placeholder {
     color: var(--gray-400);
 }
 
@@ -401,6 +432,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const phoneSection = document.getElementById('phoneSection');
     const otpSection = document.getElementById('otpSection');
     const otpForm = document.getElementById('otpLoginForm');
+    const nameInput = document.getElementById('customerName');
     const phoneInput = document.getElementById('phoneNumber');
     const otpInputs = document.querySelectorAll('.otp-digit');
     const sendOtpBtn = document.getElementById('sendOtpBtn');
@@ -410,6 +442,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const messageContainer = document.getElementById('messageContainer');
 
     let currentPhone = '';
+    let currentName = '';
     let timerInterval;
     let resendTimer;
 
@@ -478,8 +511,14 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
 
         if (phoneSection.classList.contains('active')) {
-            // Phone number submission
+            // Phone number and name submission
+            const customerName = nameInput.value.trim();
             const phoneNumber = phoneInput.value.trim();
+
+            if (!customerName) {
+                showMessage('Please enter your name', 'error');
+                return;
+            }
 
             if (!phoneNumber) {
                 showMessage('Please enter your phone number', 'error');
@@ -491,7 +530,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            await sendOtp(phoneNumber);
+            await sendOtp(phoneNumber, customerName);
         }
     });
 
@@ -511,11 +550,11 @@ document.addEventListener('DOMContentLoaded', function() {
             // Hide resend section immediately when clicked
             const resendSection = document.getElementById('resendSection');
             resendSection.style.visibility = 'hidden';
-            sendOtp(currentPhone);
+            sendOtp(currentPhone, currentName);
         }
     });
 
-    async function sendOtp(phoneNumber) {
+    async function sendOtp(phoneNumber, customerName) {
         showLoading(true);
         sendOtpBtn.disabled = true;
 
@@ -525,13 +564,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ phone_number: phoneNumber })
+                body: JSON.stringify({
+                    phone_number: phoneNumber,
+                    customer_name: customerName
+                })
             });
 
             const data = await response.json();
 
             if (data.success) {
                 currentPhone = phoneNumber;
+                currentName = customerName;
                 switchToOtpSection();
                 startTimer();
             } else {
@@ -558,7 +601,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({
                     phone_number: currentPhone,
-                    otp_code: otpCode
+                    otp_code: otpCode,
+                    customer_name: currentName
                 })
             });
 
@@ -642,8 +686,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     }
 
-    // Auto-focus phone input
-    phoneInput.focus();
+    // Auto-focus name input
+    nameInput.focus();
 });
 </script>
 {% endblock %}
