@@ -29,18 +29,24 @@
                     <span class="nav-brand-text">{{ config.APP_NAME }}</span>
                 </a>
 
-                {% if request.endpoint != 'main.index' %}
+                {% if request.endpoint not in ['main.index', 'main.get_started'] %}
                 <button class="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
                     <span class="nav-toggle-bar"></span>
                     <span class="nav-toggle-bar"></span>
                     <span class="nav-toggle-bar"></span>
                 </button>
 
-                <div class="nav-menu">
+                <div class="nav-menu" id="navMenu">
+                    <div class="nav-menu-header">
+                        <div class="nav-menu-title">Menu</div>
+                        <button class="nav-menu-close" id="navMenuClose" aria-label="Close menu">&times;</button>
+                    </div>
                     <a href="{{ url_for('main.index') }}" class="nav-link">Home</a>
                     <a href="{{ url_for('services.index') }}" class="nav-link">Services</a>
                     <a href="{{ url_for('main.contact') }}" class="nav-link">Contact</a>
                 </div>
+
+                <div class="nav-menu-overlay" id="navMenuOverlay"></div>
                 {% endif %}
             </div>
         </nav>
