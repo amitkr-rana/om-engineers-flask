@@ -3,6 +3,7 @@ from services.otp_service import OTPService
 from models.otp import OTP
 from models.customer_db import Customer
 from database import db
+from datetime import datetime
 
 otp_bp = Blueprint('otp', __name__)
 
@@ -49,7 +50,6 @@ def verify_otp():
         otp_code = data.get('otp_code', '').strip()
         customer_name = data.get('customer_name', '').strip()
 
-        print(f"OTP Verify received - Name: '{customer_name}', Phone: '{phone_number}', OTP: '{otp_code}'")
 
         if not phone_number or not otp_code:
             return jsonify({
@@ -69,35 +69,37 @@ def verify_otp():
         if success:
             # Create or update customer record in database
             try:
-                customer, created = Customer.get_or_create(
-                    name=customer_name,
-                    email=None,  # Email is now nullable
-                    phone=phone_number,
-                    address=""
-                )
+                # Check if customer already exists by phone
+                existing_customer = Customer.get_by_phone(phone_number)
 
-                # Make sure the name is properly set
-                if customer.name != customer_name:
-                    customer.name = customer_name
+                if existing_customer:
+                    # Update existing customer
+                    existing_customer.name = customer_name
+                    existing_customer.updated_at = datetime.utcnow()
+                    db.session.commit()
+                    customer = existing_customer
+                else:
+                    # Create new customer
+                    customer = Customer(
+                        name=customer_name,
+                        email=None,
+                        phone=phone_number,
+                        address=""
+                    )
+                    db.session.add(customer)
                     db.session.commit()
 
                 # Store customer information in session
                 session['customer_id'] = customer.id
                 session['customer_phone'] = customer.phone
 
-                print(f"Customer saved to DB - ID: {customer.id}, Name: '{customer.name}', Phone: {customer.phone}")
-                print(f"Session set - ID: {customer.id}, Phone: {customer.phone}")
-
             except Exception as e:
-                print(f"Error creating/updating customer: {str(e)}")
-                # Import traceback to get full error details
-                import traceback
-                print(f"Full error: {traceback.format_exc()}")
+                # Rollback any partial changes
+                db.session.rollback()
 
                 # Fallback - store in session only
                 session['customer_name'] = customer_name
                 session['customer_phone'] = phone_number
-                print(f"Fallback session set - Name: {customer_name}, Phone: {phone_number}")
 
         return jsonify({
             'success': success,

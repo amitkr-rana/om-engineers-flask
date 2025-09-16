@@ -41,10 +41,12 @@ class Customer(db.Model):
         # Clean phone number for comparison
         clean_phone = ''.join(filter(str.isdigit, phone))
         customers = cls.query.all()
+
         for customer in customers:
             customer_clean_phone = ''.join(filter(str.isdigit, customer.phone))
             if customer_clean_phone == clean_phone:
                 return customer
+
         return None
 
     @classmethod

@@ -575,7 +575,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 currentPhone = phoneNumber;
                 currentName = customerName;
-                console.log('OTP sent - Name:', customerName, 'Phone:', phoneNumber);
                 switchToOtpSection();
                 startTimer();
             } else {
@@ -607,14 +606,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
             });
 
-            console.log('Verifying OTP - Name:', currentName, 'Phone:', currentPhone, 'OTP:', otpCode);
 
             const data = await response.json();
 
             if (data.success) {
                 showMessage('OTP verified successfully! Redirecting...', 'success');
                 setTimeout(() => {
-                    window.location.href = '/dashboard';
+                    // Pass phone number as URL parameter to avoid session issues
+                    window.location.href = `/dashboard?phone=${encodeURIComponent(currentPhone)}`;
                 }, 1500);
             } else {
                 showMessage(data.message, 'error');
