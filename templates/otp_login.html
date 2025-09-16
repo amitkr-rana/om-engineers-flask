@@ -37,15 +37,15 @@
                     </div>
                 </div>
 
-                <div class="timer-section">
+                <div id="timerSection" class="timer-section">
                     <span>Code expires in: <span id="timer" class="timer">02:00</span></span>
                 </div>
 
                 <button type="button" id="verifyBtn" class="otp-btn primary">Verify OTP</button>
 
-                <div class="resend-section" style="visibility: hidden;">
+                <div id="resendSection" class="resend-section" style="visibility: hidden;">
                     <span>Didn't receive the code? </span>
-                    <button type="button" id="resendBtn" class="link-btn" disabled>Resend OTP</button>
+                    <button type="button" id="resendBtn" class="link-btn">Resend OTP</button>
                 </div>
             </div>
         </form>
@@ -508,6 +508,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Resend OTP
     resendBtn.addEventListener('click', function() {
         if (!resendBtn.disabled) {
+            // Hide resend section immediately when clicked
+            const resendSection = document.getElementById('resendSection');
+            resendSection.style.visibility = 'hidden';
             sendOtp(currentPhone);
         }
     });
@@ -531,7 +534,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentPhone = phoneNumber;
                 switchToOtpSection();
                 startTimer();
-                showMessage('OTP sent successfully to your phone', 'success');
             } else {
                 showMessage(data.message, 'error');
                 sendOtpBtn.disabled = false;
@@ -594,13 +596,16 @@ document.addEventListener('DOMContentLoaded', function() {
     function startTimer() {
         let timeLeft = 120; // 2 minutes
         const timerDisplay = document.getElementById('timer');
-        const resendSection = document.querySelector('.resend-section');
+        const timerSection = document.getElementById('timerSection');
+        const resendSection = document.getElementById('resendSection');
 
         clearInterval(timerInterval);
         clearTimeout(resendTimer);
 
-        resendBtn.disabled = true;
+        // Show timer, hide resend
+        timerSection.style.visibility = 'visible';
         resendSection.style.visibility = 'hidden';
+        resendBtn.disabled = false;
 
         timerInterval = setInterval(() => {
             timeLeft--;
@@ -610,9 +615,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (timeLeft <= 0) {
                 clearInterval(timerInterval);
-                resendBtn.disabled = false;
+                // Hide timer, show resend
+                timerSection.style.visibility = 'hidden';
                 resendSection.style.visibility = 'visible';
-                timerDisplay.textContent = '00:00';
             }
         }, 1000);
     }

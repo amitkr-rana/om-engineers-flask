@@ -83,7 +83,7 @@ class OTPService:
                 return False, "Fast2SMS API key not configured"
 
             # Create OTP message
-            message = f"Your Om Engineers OTP is: {otp_code}. Valid for 10 minutes. Do not share with anyone."
+            message = f"Your Om Engineers OTP is: {otp_code}. Valid for 2 minutes. Do not share with anyone."
 
             payload = {
                 "authorization": api_key,
