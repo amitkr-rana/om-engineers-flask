@@ -1,8 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from datetime import datetime, date, time, timedelta
-from models.appointment import Appointment, AppointmentStatus, AppointmentType
-from models.customer import Customer
-from models.service import Service
+from models import Appointment, AppointmentStatus, AppointmentType, Customer, Service
+from database import db
 
 appointments_bp = Blueprint('appointments', __name__)
 
@@ -15,7 +14,7 @@ def index():
     customer_search = request.args.get('customer', '')
 
     # Get all appointments
-    appointments = Appointment.get_all()
+    appointments = Appointment.query.all()
 
     # Filter by status if specified
     if status_filter:
@@ -38,7 +37,7 @@ def index():
         customer_search = customer_search.lower()
         filtered_appointments = []
         for apt in appointments:
-            customer = Customer.get_by_id(apt.customer_id)
+            customer = Customer.query.get(apt.customer_id)
             if customer and (customer_search in customer.name.lower() or
                            customer_search in customer.email.lower() or
                            customer_search in customer.phone):
@@ -51,8 +50,8 @@ def index():
     # Add customer and service info to appointments
     appointment_details = []
     for apt in appointments:
-        customer = Customer.get_by_id(apt.customer_id)
-        service = Service.get_by_id(apt.service_id)
+        customer = Customer.query.get(apt.customer_id)
+        service = Service.query.get(apt.service_id)
         appointment_details.append({
             'appointment': apt,
             'customer': customer,
@@ -73,13 +72,13 @@ def index():
 @appointments_bp.route('/<int:appointment_id>')
 def detail(appointment_id):
     """Appointment detail page"""
-    appointment = Appointment.get_by_id(appointment_id)
+    appointment = Appointment.query.get(appointment_id)
     if not appointment:
         flash('Appointment not found', 'error')
         return redirect(url_for('appointments.index'))
 
-    customer = Customer.get_by_id(appointment.customer_id)
-    service = Service.get_by_id(appointment.service_id)
+    customer = Customer.query.get(appointment.customer_id)
+    service = Service.query.get(appointment.service_id)
 
     # Get available time slots for rescheduling (next 30 days)
     available_dates = []
@@ -102,7 +101,7 @@ def detail(appointment_id):
 @appointments_bp.route('/<int:appointment_id>/update', methods=['POST'])
 def update(appointment_id):
     """Update appointment"""
-    appointment = Appointment.get_by_id(appointment_id)
+    appointment = Appointment.query.get(appointment_id)
     if not appointment:
         flash('Appointment not found', 'error')
         return redirect(url_for('appointments.index'))
@@ -177,8 +176,8 @@ def today():
     # Add customer and service info
     appointment_details = []
     for apt in today_appointments:
-        customer = Customer.get_by_id(apt.customer_id)
-        service = Service.get_by_id(apt.service_id)
+        customer = Customer.query.get(apt.customer_id)
+        service = Service.query.get(apt.service_id)
         appointment_details.append({
             'appointment': apt,
             'customer': customer,
@@ -198,8 +197,8 @@ def upcoming():
     # Add customer and service info
     appointment_details = []
     for apt in upcoming_appointments:
-        customer = Customer.get_by_id(apt.customer_id)
-        service = Service.get_by_id(apt.service_id)
+        customer = Customer.query.get(apt.customer_id)
+        service = Service.query.get(apt.service_id)
         appointment_details.append({
             'appointment': apt,
             'customer': customer,
@@ -234,8 +233,8 @@ def calendar():
         if date_key not in appointments_by_date:
             appointments_by_date[date_key] = []
 
-        customer = Customer.get_by_id(apt.customer_id)
-        service = Service.get_by_id(apt.service_id)
+        customer = Customer.query.get(apt.customer_id)
+        service = Service.query.get(apt.service_id)
 
         appointments_by_date[date_key].append({
             'appointment': apt,
@@ -287,8 +286,8 @@ def api_appointments():
     # Convert to dict format with customer and service info
     appointments_data = []
     for apt in appointments:
-        customer = Customer.get_by_id(apt.customer_id)
-        service = Service.get_by_id(apt.service_id)
+        customer = Customer.query.get(apt.customer_id)
+        service = Service.query.get(apt.service_id)
 
         apt_data = apt.to_dict()
         apt_data['customer'] = customer.to_dict() if customer else None

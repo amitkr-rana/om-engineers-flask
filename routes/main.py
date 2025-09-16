@@ -1,13 +1,9 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from datetime import datetime, date, time
-from models.customer import Customer
-from models.service import Service
-from models.appointment import Appointment, AppointmentType
+from models import Customer, Service, Appointment, AppointmentType
+from database import db
 
 main_bp = Blueprint('main', __name__)
-
-# Initialize default services on first import
-Service.initialize_default_services()
 
 @main_bp.route('/')
 def index():
@@ -40,7 +36,7 @@ def get_started_post():
             return redirect(url_for('main.get_started'))
 
         # Validate service exists
-        service = Service.get_by_id(int(service_id))
+        service = Service.query.get(int(service_id))
         if not service:
             flash('Invalid service selected', 'error')
             return redirect(url_for('main.get_started'))
@@ -73,7 +69,7 @@ def get_started_post():
         )
 
         # Create appointment
-        appointment = Appointment.create(
+        appointment = Appointment(
             customer_id=customer.id,
             service_id=service.id,
             appointment_date=parsed_date,
@@ -82,6 +78,8 @@ def get_started_post():
             notes=notes,
             address=address
         )
+        db.session.add(appointment)
+        db.session.commit()
 
         # Success message
         flash(f'Service appointment scheduled successfully! Your appointment ID is #{appointment.id}', 'success')
@@ -117,7 +115,7 @@ def request_quotation_post():
             return redirect(url_for('main.request_quotation'))
 
         # Validate service exists
-        service = Service.get_by_id(int(service_id))
+        service = Service.query.get(int(service_id))
         if not service:
             flash('Invalid service selected', 'error')
             return redirect(url_for('main.request_quotation'))
@@ -149,7 +147,7 @@ def request_quotation_post():
         )
 
         # Create quotation appointment
-        appointment = Appointment.create(
+        appointment = Appointment(
             customer_id=customer.id,
             service_id=service.id,
             appointment_date=parsed_date,
@@ -158,6 +156,8 @@ def request_quotation_post():
             notes=f"Quotation request: {description}",
             address=address
         )
+        db.session.add(appointment)
+        db.session.commit()
 
         # Success message
         flash(f'Quotation request submitted successfully! Your request ID is #{appointment.id}', 'success')
@@ -170,13 +170,13 @@ def request_quotation_post():
 @main_bp.route('/appointment/<int:appointment_id>/confirmation')
 def appointment_confirmation(appointment_id):
     """Appointment confirmation page"""
-    appointment = Appointment.get_by_id(appointment_id)
+    appointment = Appointment.query.get(appointment_id)
     if not appointment:
         flash('Appointment not found', 'error')
         return redirect(url_for('main.index'))
 
-    customer = Customer.get_by_id(appointment.customer_id)
-    service = Service.get_by_id(appointment.service_id)
+    customer = Customer.query.get(appointment.customer_id)
+    service = Service.query.get(appointment.service_id)
 
     return render_template('appointment_confirmation.html',
                          appointment=appointment,

@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, jsonify
-from models.service import Service
+from models import Service
 
 services_bp = Blueprint('services', __name__)
 
@@ -34,7 +34,7 @@ def index():
 @services_bp.route('/<int:service_id>')
 def detail(service_id):
     """Service detail page"""
-    service = Service.get_by_id(service_id)
+    service = Service.query.get(service_id)
     if not service:
         return render_template('404.html'), 404
 
@@ -78,7 +78,7 @@ def api_services():
 @services_bp.route('/api/services/<int:service_id>')
 def api_service_detail(service_id):
     """API endpoint for single service (JSON)"""
-    service = Service.get_by_id(service_id)
+    service = Service.query.get(service_id)
     if not service:
         return jsonify({'error': 'Service not found'}), 404
 
