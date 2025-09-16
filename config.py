@@ -12,7 +12,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # App settings
-    APP_NAME = 'Om Engineers'
+    APP_NAME = 'Amit Engineers'
     APP_TAGLINE = 'Your Equipment, Our Expertise'
     APP_DESCRIPTION = 'Schedule a repair service with ease. Our skilled professionals are ready to assist you.'
 
