@@ -49,6 +49,8 @@ def verify_otp():
         otp_code = data.get('otp_code', '').strip()
         customer_name = data.get('customer_name', '').strip()
 
+        print(f"OTP Verify received - Name: '{customer_name}', Phone: '{phone_number}', OTP: '{otp_code}'")
+
         if not phone_number or not otp_code:
             return jsonify({
                 'success': False,
@@ -65,23 +67,37 @@ def verify_otp():
         success, message = OTPService.verify_otp(phone_number, otp_code)
 
         if success:
-            # Create or update customer record
+            # Create or update customer record in database
             try:
                 customer, created = Customer.get_or_create(
                     name=customer_name,
-                    email="",  # Will be updated later if needed
+                    email=None,  # Email is now nullable
                     phone=phone_number,
-                    address=""  # Will be updated later if needed
+                    address=""
                 )
 
-                # Store customer ID in session
+                # Make sure the name is properly set
+                if customer.name != customer_name:
+                    customer.name = customer_name
+                    db.session.commit()
+
+                # Store customer information in session
                 session['customer_id'] = customer.id
-                session['customer_name'] = customer.name
                 session['customer_phone'] = customer.phone
 
+                print(f"Customer saved to DB - ID: {customer.id}, Name: '{customer.name}', Phone: {customer.phone}")
+                print(f"Session set - ID: {customer.id}, Phone: {customer.phone}")
+
             except Exception as e:
-                # If customer creation fails, still allow login but log the error
                 print(f"Error creating/updating customer: {str(e)}")
+                # Import traceback to get full error details
+                import traceback
+                print(f"Full error: {traceback.format_exc()}")
+
+                # Fallback - store in session only
+                session['customer_name'] = customer_name
+                session['customer_phone'] = phone_number
+                print(f"Fallback session set - Name: {customer_name}, Phone: {phone_number}")
 
         return jsonify({
             'success': success,

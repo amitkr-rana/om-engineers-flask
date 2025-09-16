@@ -575,6 +575,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 currentPhone = phoneNumber;
                 currentName = customerName;
+                console.log('OTP sent - Name:', customerName, 'Phone:', phoneNumber);
                 switchToOtpSection();
                 startTimer();
             } else {
@@ -605,6 +606,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     customer_name: currentName
                 })
             });
+
+            console.log('Verifying OTP - Name:', currentName, 'Phone:', currentPhone, 'OTP:', otpCode);
 
             const data = await response.json();
 

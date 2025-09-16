@@ -205,18 +205,44 @@ def terms():
 @main_bp.route('/dashboard')
 def dashboard():
     """User dashboard after successful OTP login"""
-    # Get customer information from session
-    customer_name = session.get('customer_name', 'Guest')
-    customer_phone = session.get('customer_phone', '')
-    customer_id = session.get('customer_id')
+    # Debug: Print session contents
+    print(f"Dashboard session contents: {dict(session)}")
 
-    # Try to get more detailed customer info if available
+    # Get customer information - prioritize database over session
+    customer_id = session.get('customer_id')
+    customer_phone = session.get('customer_phone', '')
+    customer_name = 'Guest'
     customer = None
+
+    print(f"Dashboard - Customer ID from session: {customer_id}, Phone: {customer_phone}")
+
+    # First try to get customer from database by ID
     if customer_id:
         try:
             customer = Customer.query.get(customer_id)
-        except:
-            pass
+            if customer:
+                customer_name = customer.name
+                customer_phone = customer.phone
+                print(f"Found customer in DB by ID: {customer.name}")
+        except Exception as e:
+            print(f"Error querying customer by ID: {str(e)}")
+
+    # If no customer found by ID, try by phone number
+    if not customer and customer_phone:
+        try:
+            customer = Customer.get_by_phone(customer_phone)
+            if customer:
+                customer_name = customer.name
+                print(f"Found customer in DB by phone: {customer.name}")
+        except Exception as e:
+            print(f"Error querying customer by phone: {str(e)}")
+
+    # Final fallback to session data
+    if not customer:
+        customer_name = session.get('customer_name', 'Guest')
+        print(f"Using session fallback name: {customer_name}")
+
+    print(f"Final dashboard data - Name: '{customer_name}', Phone: '{customer_phone}'")
 
     return render_template('user_dashboard.html',
                          customer_name=customer_name,
