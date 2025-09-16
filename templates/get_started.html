@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Get Started - {{ config.APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="form-fullscreen">
+    <div class="form-container">
+        <!-- Header -->
+        <div style="text-align: center; margin-bottom: var(--space-8);">
+            <h1>Schedule Your Service</h1>
+            <p style="color: var(--gray-600); font-size: var(--font-size-lg);">
+                Fill out the form below to schedule your equipment repair service with our expert technicians.
+            </p>
+        </div>
+
+            <!-- Service Booking Form -->
+            <form method="POST" class="service-form" novalidate>
+                <!-- Personal Information -->
+                <div style="background-color: var(--gray-50); padding: var(--space-6); border-radius: var(--border-radius-lg); margin-bottom: var(--space-8);">
+                    <h3 style="margin-bottom: var(--space-6); color: var(--gray-800);">Your Information</h3>
+
+                    <div class="form-group">
+                        <label for="name" class="form-label">Full Name *</label>
+                        <input type="text" id="name" name="name" class="form-input" required
+                               placeholder="Enter your full name">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email" class="form-label">Email Address *</label>
+                        <input type="email" id="email" name="email" class="form-input" required
+                               placeholder="your.email@example.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone" class="form-label">Phone Number *</label>
+                        <input type="tel" id="phone" name="phone" class="form-input" required
+                               placeholder="(555) 123-4567">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="address" class="form-label">Service Address</label>
+                        <textarea id="address" name="address" class="form-input" rows="3"
+                                  placeholder="Enter the address where service is needed"></textarea>
+                    </div>
+                </div>
+
+                <!-- Service Details -->
+                <div style="background-color: var(--gray-50); padding: var(--space-6); border-radius: var(--border-radius-lg); margin-bottom: var(--space-8);">
+                    <h3 style="margin-bottom: var(--space-6); color: var(--gray-800);">Service Details</h3>
+
+                    <div class="form-group">
+                        <label for="service_id" class="form-label">Service Type *</label>
+                        <select id="service_id" name="service_id" class="form-input" required>
+                            <option value="">Select a service</option>
+                            {% for service in services %}
+                            <option value="{{ service.id }}" data-duration="{{ service.duration }}" data-price="{{ service.price_range }}">
+                                {{ service.icon }} {{ service.name }} - {{ service.price_range }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Service Info Display -->
+                    <div id="service-info" style="display: none; background-color: var(--white); padding: var(--space-4); border-radius: var(--border-radius); border: 1px solid var(--gray-200); margin-bottom: var(--space-4);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: var(--font-size-sm); color: var(--gray-600);">
+                            <span id="service-duration">⏱️ Duration: --</span>
+                            <span id="service-price">💰 Price: --</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="notes" class="form-label">Additional Notes</label>
+                        <textarea id="notes" name="notes" class="form-input" rows="4"
+                                  placeholder="Describe the issue or any specific requirements..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Appointment Scheduling -->
+                <div style="background-color: var(--gray-50); padding: var(--space-6); border-radius: var(--border-radius-lg); margin-bottom: var(--space-8);">
+                    <h3 style="margin-bottom: var(--space-6); color: var(--gray-800);">Preferred Appointment Time</h3>
+
+                    <div style="display: grid; gap: var(--space-4); grid-template-columns: 1fr 1fr;">
+                        <div class="form-group">
+                            <label for="appointment_date" class="form-label">Date *</label>
+                            <input type="date" id="appointment_date" name="appointment_date" class="form-input" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="appointment_time" class="form-label">Time *</label>
+                            <select id="appointment_time" name="appointment_time" class="form-input" required>
+                                <option value="">Select time</option>
+                                <option value="09:00">9:00 AM</option>
+                                <option value="10:00">10:00 AM</option>
+                                <option value="11:00">11:00 AM</option>
+                                <option value="12:00">12:00 PM</option>
+                                <option value="13:00">1:00 PM</option>
+                                <option value="14:00">2:00 PM</option>
+                                <option value="15:00">3:00 PM</option>
+                                <option value="16:00">4:00 PM</option>
+                                <option value="17:00">5:00 PM</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="availability-info" style="margin-top: var(--space-4); padding: var(--space-3); background-color: var(--primary-color); color: var(--white); border-radius: var(--border-radius); display: none;">
+                        <small>ℹ️ We'll confirm availability and contact you within 2 hours.</small>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div style="text-align: center;">
+                    <button type="submit" class="btn btn-primary btn-lg btn-full">
+                        Schedule Service
+                    </button>
+
+                    <p style="margin-top: var(--space-4); color: var(--gray-500); font-size: var(--font-size-sm);">
+                        By scheduling a service, you agree to our
+                        <a href="{{ url_for('main.terms') }}" style="color: var(--primary-color);">Terms of Service</a> and
+                        <a href="{{ url_for('main.privacy') }}" style="color: var(--primary-color);">Privacy Policy</a>.
+                    </p>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const serviceSelect = document.getElementById('service_id');
+    const serviceInfo = document.getElementById('service-info');
+    const serviceDuration = document.getElementById('service-duration');
+    const servicePrice = document.getElementById('service-price');
+    const dateInput = document.getElementById('appointment_date');
+    const availabilityInfo = document.getElementById('availability-info');
+
+    // Set minimum date to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    dateInput.min = tomorrow.toISOString().split('T')[0];
+
+    // Set maximum date to 90 days from now
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + 90);
+    dateInput.max = maxDate.toISOString().split('T')[0];
+
+    // Service selection handler
+    serviceSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+
+        if (selectedOption.value) {
+            const duration = selectedOption.dataset.duration;
+            const price = selectedOption.dataset.price;
+
+            serviceDuration.textContent = `⏱️ Duration: ${duration}`;
+            servicePrice.textContent = `💰 Price: ${price}`;
+            serviceInfo.style.display = 'block';
+        } else {
+            serviceInfo.style.display = 'none';
+        }
+    });
+
+    // Date selection handler
+    dateInput.addEventListener('change', function() {
+        if (this.value) {
+            availabilityInfo.style.display = 'block';
+        } else {
+            availabilityInfo.style.display = 'none';
+        }
+    });
+
+    // Phone number formatting
+    const phoneInput = document.getElementById('phone');
+    phoneInput.addEventListener('input', function() {
+        let value = this.value.replace(/\D/g, '');
+        if (value.length >= 6) {
+            value = value.substring(0, 3) + '-' + value.substring(3, 6) + '-' + value.substring(6, 10);
+        } else if (value.length >= 3) {
+            value = value.substring(0, 3) + '-' + value.substring(3);
+        }
+        this.value = value;
+    });
+
+    // Form validation enhancement
+    const form = document.querySelector('.service-form');
+    const submitButton = form.querySelector('button[type="submit"]');
+
+    form.addEventListener('submit', function(e) {
+        // Show loading state
+        submitButton.disabled = true;
+        submitButton.textContent = 'Scheduling...';
+
+        // Re-enable button after a delay if form submission fails
+        setTimeout(() => {
+            if (submitButton.disabled) {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Schedule Service';
+            }
+        }, 5000);
+    });
+
+    // Real-time validation feedback
+    const requiredInputs = form.querySelectorAll('input[required], select[required]');
+
+    requiredInputs.forEach(input => {
+        input.addEventListener('blur', function() {
+            if (this.value.trim()) {
+                this.style.borderColor = 'var(--success-color)';
+            } else {
+                this.style.borderColor = 'var(--error-color)';
+            }
+        });
+
+        input.addEventListener('input', function() {
+            if (this.style.borderColor === 'var(--error-color)' && this.value.trim()) {
+                this.style.borderColor = 'var(--success-color)';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

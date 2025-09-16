@@ -1,0 +1,1 @@
+- all pages should be single page [no scroll unless absolutely necessary] and should get auto adjusted to height and width of the mobile device

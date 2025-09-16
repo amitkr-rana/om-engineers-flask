@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}{{ config.APP_NAME }} - {{ config.APP_TAGLINE }}{% endblock %}
+
+{% block content %}
+<div class="hero-fullscreen">
+    <div class="hero-container">
+        <!-- Hero Image -->
+        <img src="{{ url_for('static', filename='images/hero-interior.jpg') }}"
+             alt="Modern interior design showcasing our equipment repair expertise"
+             class="hero-image"
+             onerror="this.style.display='none'">
+
+        <!-- Hero Content -->
+        <h1 class="hero-title">{{ config.APP_TAGLINE }}</h1>
+
+        <p class="hero-subtitle">{{ config.APP_DESCRIPTION }}</p>
+
+        <!-- Call-to-Action Buttons -->
+        <div class="hero-buttons">
+            <a href="{{ url_for('main.get_started') }}" class="btn btn-primary btn-lg">
+                Get Started
+            </a>
+            <a href="{{ url_for('main.request_quotation') }}" class="btn btn-outline btn-lg">
+                Request Quotation
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Add intersection observer for animations
+document.addEventListener('DOMContentLoaded', function() {
+    if ('IntersectionObserver' in window) {
+        const animationObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        });
+
+        // Add animation styles and observe elements
+        const animatedElements = document.querySelectorAll('.card, .hero-title, .hero-subtitle');
+        animatedElements.forEach((el, index) => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = `opacity 0.6s ease ${index * 0.1}s, transform 0.6s ease ${index * 0.1}s`;
+            animationObserver.observe(el);
+        });
+    }
+});
+</script>
+{% endblock %}

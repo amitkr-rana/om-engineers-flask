@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{ config.APP_DESCRIPTION }}">
+    <title>{% block title %}{{ config.APP_NAME }}{% endblock %}</title>
+
+    <!-- Mobile-first CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+
+    <!-- Preload critical resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <!-- Skip to main content for accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-container">
+                <a href="{{ url_for('main.index') }}" class="nav-brand">
+                    <span class="nav-brand-icon">🔧</span>
+                    <span class="nav-brand-text">{{ config.APP_NAME }}</span>
+                </a>
+
+                <button class="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+                    <span class="nav-toggle-bar"></span>
+                    <span class="nav-toggle-bar"></span>
+                    <span class="nav-toggle-bar"></span>
+                </button>
+
+                <div class="nav-menu">
+                    <a href="{{ url_for('main.index') }}" class="nav-link">Home</a>
+                    <a href="{{ url_for('services.index') }}" class="nav-link">Services</a>
+                    <a href="{{ url_for('main.contact') }}" class="nav-link">Contact</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main id="main-content" class="main">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash-message flash-{{ category }}" role="alert">
+                            <span class="flash-message-text">{{ message }}</span>
+                            <button class="flash-message-close" aria-label="Close message">&times;</button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <h3>{{ config.APP_NAME }}</h3>
+                    <p>{{ config.APP_TAGLINE }}</p>
+                </div>
+
+                <div class="footer-contact">
+                    <h4>Contact Us</h4>
+                    <p>
+                        <a href="tel:{{ config.CONTACT_PHONE }}" class="footer-link">
+                            📞 {{ config.CONTACT_PHONE }}
+                        </a>
+                    </p>
+                    <p>
+                        <a href="mailto:{{ config.CONTACT_EMAIL }}" class="footer-link">
+                            ✉️ {{ config.CONTACT_EMAIL }}
+                        </a>
+                    </p>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2024 {{ config.APP_NAME }}. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Contact Us - {{ config.APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="form-fullscreen">
+    <div class="form-container" style="text-align: center;">
+        <h1>Contact {{ config.APP_NAME }}</h1>
+        <p style="color: var(--gray-600); font-size: var(--font-size-lg); margin-bottom: var(--space-8);">
+            Get in touch with our team for any questions, support, or emergency services.
+        </p>
+
+            <!-- Contact Cards -->
+            <div style="display: grid; gap: var(--space-6); grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); margin-bottom: var(--space-12);">
+                <!-- Phone -->
+                <div class="card" style="text-align: center; padding: var(--space-8);">
+                    <div style="font-size: var(--font-size-3xl); margin-bottom: var(--space-4);">📞</div>
+                    <h3>Call Us</h3>
+                    <p style="color: var(--gray-600); margin-bottom: var(--space-4);">
+                        Speak directly with our customer service team
+                    </p>
+                    <a href="tel:{{ config.CONTACT_PHONE }}" class="btn btn-primary">
+                        {{ config.CONTACT_PHONE }}
+                    </a>
+                    <p style="font-size: var(--font-size-sm); color: var(--gray-500); margin-top: var(--space-2);">
+                        Mon-Sat: 8:00 AM - 8:00 PM<br>
+                        Sunday: 9:00 AM - 6:00 PM
+                    </p>
+                </div>
+
+                <!-- Email -->
+                <div class="card" style="text-align: center; padding: var(--space-8);">
+                    <div style="font-size: var(--font-size-3xl); margin-bottom: var(--space-4);">✉️</div>
+                    <h3>Email Us</h3>
+                    <p style="color: var(--gray-600); margin-bottom: var(--space-4);">
+                        Send us detailed information about your needs
+                    </p>
+                    <a href="mailto:{{ config.CONTACT_EMAIL }}" class="btn btn-primary">
+                        {{ config.CONTACT_EMAIL }}
+                    </a>
+                    <p style="font-size: var(--font-size-sm); color: var(--gray-500); margin-top: var(--space-2);">
+                        We respond within 2 hours<br>
+                        during business hours
+                    </p>
+                </div>
+            </div>
+
+            <!-- Emergency Contact -->
+            <div style="background-color: var(--error-color); color: var(--white); padding: var(--space-8); border-radius: var(--border-radius-lg); margin-bottom: var(--space-12);">
+                <h2 style="color: var(--white); margin-bottom: var(--space-4);">🚨 Emergency Services</h2>
+                <p style="margin-bottom: var(--space-6); opacity: 0.9;">
+                    For urgent repairs that can't wait - available 24/7
+                </p>
+                <a href="tel:{{ config.CONTACT_PHONE }}" class="btn btn-lg" style="background-color: var(--white); color: var(--error-color);">
+                    Call Emergency Line
+                </a>
+                <p style="font-size: var(--font-size-sm); margin-top: var(--space-4); opacity: 0.8;">
+                    Additional charges may apply for after-hours emergency services
+                </p>
+            </div>
+
+            <!-- Quick Actions -->
+            <div style="display: flex; flex-direction: column; gap: var(--space-4); align-items: center;">
+                <h3>Ready to Get Started?</h3>
+                <div style="display: flex; gap: var(--space-4); flex-wrap: wrap; justify-content: center;">
+                    <a href="{{ url_for('main.get_started') }}" class="btn btn-primary btn-lg">
+                        Schedule Service
+                    </a>
+                    <a href="{{ url_for('main.request_quotation') }}" class="btn btn-outline btn-lg">
+                        Request Quote
+                    </a>
+                </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

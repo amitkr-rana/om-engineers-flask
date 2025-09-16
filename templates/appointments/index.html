@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}Appointments - {{ config.APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="section">
+    <div class="container">
+        <!-- Header with Statistics -->
+        <div style="margin-bottom: var(--space-8);">
+            <h1>Appointment Management</h1>
+            <p style="color: var(--gray-600); margin-bottom: var(--space-6);">
+                Manage and track all service appointments and quotation requests.
+            </p>
+
+            <!-- Quick Stats -->
+            <div style="display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                <div class="card" style="text-align: center; padding: var(--space-4);">
+                    <div style="font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold); color: var(--primary-color);">
+                        {{ stats.total }}
+                    </div>
+                    <div style="color: var(--gray-600); font-size: var(--font-size-sm);">Total Appointments</div>
+                </div>
+                <div class="card" style="text-align: center; padding: var(--space-4);">
+                    <div style="font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold); color: var(--warning-color);">
+                        {{ stats.pending }}
+                    </div>
+                    <div style="color: var(--gray-600); font-size: var(--font-size-sm);">Pending</div>
+                </div>
+                <div class="card" style="text-align: center; padding: var(--space-4);">
+                    <div style="font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold); color: var(--success-color);">
+                        {{ stats.completed }}
+                    </div>
+                    <div style="color: var(--gray-600); font-size: var(--font-size-sm);">Completed</div>
+                </div>
+                <div class="card" style="text-align: center; padding: var(--space-4);">
+                    <div style="font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold); color: var(--primary-color);">
+                        {{ stats.completion_rate }}%
+                    </div>
+                    <div style="color: var(--gray-600); font-size: var(--font-size-sm);">Completion Rate</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div style="background-color: var(--gray-50); padding: var(--space-6); border-radius: var(--border-radius-lg); margin-bottom: var(--space-8);">
+            <form method="GET" style="display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                <div>
+                    <label for="status" class="form-label">Status</label>
+                    <select id="status" name="status" class="form-input">
+                        <option value="">All Statuses</option>
+                        {% for status in statuses %}
+                        <option value="{{ status.value }}" {% if current_status == status.value %}selected{% endif %}>
+                            {{ status.value.title() }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label for="date" class="form-label">Date</label>
+                    <input type="date" id="date" name="date" class="form-input" value="{{ current_date }}">
+                </div>
+
+                <div>
+                    <label for="customer" class="form-label">Customer Search</label>
+                    <input type="text" id="customer" name="customer" class="form-input"
+                           placeholder="Name, email, or phone" value="{{ current_customer }}">
+                </div>
+
+                <div style="display: flex; align-items: end; gap: var(--space-2);">
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                    <a href="{{ url_for('appointments.index') }}" class="btn btn-secondary">Clear</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Quick Actions -->
+        <div style="display: flex; gap: var(--space-4); margin-bottom: var(--space-8); flex-wrap: wrap;">
+            <a href="{{ url_for('appointments.today') }}" class="btn btn-outline">
+                📅 Today's Appointments
+            </a>
+            <a href="{{ url_for('appointments.upcoming') }}" class="btn btn-outline">
+                ⏰ Upcoming (7 days)
+            </a>
+            <a href="{{ url_for('appointments.calendar') }}" class="btn btn-outline">
+                📊 Calendar View
+            </a>
+        </div>
+
+        <!-- Appointments List -->
+        {% if appointment_details %}
+        <div style="display: grid; gap: var(--space-6);">
+            {% for item in appointment_details %}
+            {% set appointment = item.appointment %}
+            {% set customer = item.customer %}
+            {% set service = item.service %}
+
+            <div class="card" style="border-left: 4px solid
+                {% if appointment.status.value == 'pending' %}var(--warning-color)
+                {% elif appointment.status.value == 'confirmed' %}var(--primary-color)
+                {% elif appointment.status.value == 'completed' %}var(--success-color)
+                {% elif appointment.status.value == 'cancelled' %}var(--error-color)
+                {% else %}var(--gray-400){% endif %};">
+
+                <div style="display: grid; gap: var(--space-4); grid-template-columns: 1fr auto;">
+                    <!-- Appointment Info -->
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-3);">
+                            <div>
+                                <h3 style="margin-bottom: var(--space-1);">
+                                    <a href="{{ url_for('appointments.detail', appointment_id=appointment.id) }}"
+                                       style="color: var(--gray-900); text-decoration: none;">
+                                        #{{ appointment.id }} - {{ service.name if service else 'Unknown Service' }}
+                                    </a>
+                                </h3>
+                                <div style="font-size: var(--font-size-sm); color: var(--gray-600);">
+                                    {{ service.icon if service else '🔧' }} {{ service.category if service else 'Service' }}
+                                    {% if appointment.appointment_type.value == 'quotation' %} (Quotation){% endif %}
+                                </div>
+                            </div>
+
+                            <span style="background-color:
+                                {% if appointment.status.value == 'pending' %}var(--warning-color)
+                                {% elif appointment.status.value == 'confirmed' %}var(--primary-color)
+                                {% elif appointment.status.value == 'completed' %}var(--success-color)
+                                {% elif appointment.status.value == 'cancelled' %}var(--error-color)
+                                {% else %}var(--gray-400){% endif %};
+                                color: var(--white); padding: var(--space-1) var(--space-3); border-radius: var(--border-radius-sm); font-size: var(--font-size-sm);">
+                                {{ appointment.status.value.title() }}
+                            </span>
+                        </div>
+
+                        <!-- Customer & Appointment Details -->
+                        <div style="display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+                            <div>
+                                <div style="font-weight: var(--font-weight-medium); color: var(--gray-700);">
+                                    👤 {{ customer.name if customer else 'Unknown Customer' }}
+                                </div>
+                                <div style="font-size: var(--font-size-sm); color: var(--gray-600);">
+                                    {{ customer.email if customer else '' }}
+                                </div>
+                                <div style="font-size: var(--font-size-sm); color: var(--gray-600);">
+                                    {{ format_phone(customer.phone) if customer else '' }}
+                                </div>
+                            </div>
+
+                            <div>
+                                <div style="font-weight: var(--font-weight-medium); color: var(--gray-700);">
+                                    📅 {{ format_date(appointment.appointment_date) }}
+                                </div>
+                                <div style="font-size: var(--font-size-sm); color: var(--gray-600);">
+                                    🕐 {{ format_time(appointment.appointment_time) }}
+                                </div>
+                                {% if service %}
+                                <div style="font-size: var(--font-size-sm); color: var(--gray-600);">
+                                    ⏱️ {{ service.duration }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {% if appointment.notes %}
+                        <div style="margin-top: var(--space-3); padding: var(--space-3); background-color: var(--gray-50); border-radius: var(--border-radius); font-size: var(--font-size-sm);">
+                            <strong>Notes:</strong> {{ appointment.notes[:100] }}{% if appointment.notes|length > 100 %}...{% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Actions -->
+                    <div style="display: flex; flex-direction: column; gap: var(--space-2); min-width: 120px;">
+                        <a href="{{ url_for('appointments.detail', appointment_id=appointment.id) }}"
+                           class="btn btn-sm btn-primary">
+                            View Details
+                        </a>
+
+                        {% if appointment.status.value == 'pending' %}
+                        <form method="POST" action="{{ url_for('appointments.update', appointment_id=appointment.id) }}"
+                              style="margin: 0;">
+                            <input type="hidden" name="action" value="confirm">
+                            <button type="submit" class="btn btn-sm btn-outline btn-full">Confirm</button>
+                        </form>
+                        {% elif appointment.status.value == 'confirmed' %}
+                        <form method="POST" action="{{ url_for('appointments.update', appointment_id=appointment.id) }}"
+                              style="margin: 0;">
+                            <input type="hidden" name="action" value="start">
+                            <button type="submit" class="btn btn-sm btn-outline btn-full">Start Service</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: var(--space-16); color: var(--gray-500);">
+            <div style="font-size: var(--font-size-3xl); margin-bottom: var(--space-4);">📅</div>
+            <h3 style="color: var(--gray-600); margin-bottom: var(--space-2);">No appointments found</h3>
+            <p>
+                {% if current_status or current_date or current_customer %}
+                    Try adjusting your filters or <a href="{{ url_for('appointments.index') }}">view all appointments</a>.
+                {% else %}
+                    Appointments will appear here once customers start booking services.
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit form when filters change (except for customer search)
+    const statusFilter = document.getElementById('status');
+    const dateFilter = document.getElementById('date');
+
+    [statusFilter, dateFilter].forEach(filter => {
+        if (filter) {
+            filter.addEventListener('change', function() {
+                this.form.submit();
+            });
+        }
+    });
+
+    // Debounced customer search
+    const customerSearch = document.getElementById('customer');
+    if (customerSearch) {
+        let searchTimeout;
+        customerSearch.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                if (this.value.length >= 3 || this.value.length === 0) {
+                    this.form.submit();
+                }
+            }, 500);
+        });
+    }
+});
+</script>
+{% endblock %}

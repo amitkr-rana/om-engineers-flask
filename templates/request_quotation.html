@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+
+{% block title %}Request Quotation - {{ config.APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="form-fullscreen">
+    <div class="form-container">
+        <!-- Header -->
+        <div style="text-align: center; margin-bottom: var(--space-8);">
+            <h1>Request a Quotation</h1>
+            <p style="color: var(--gray-600); font-size: var(--font-size-lg);">
+                Get a detailed estimate for your equipment repair project. Our experts will assess your needs and provide a comprehensive quote.
+            </p>
+        </div>
+
+            <!-- Quotation Request Form -->
+            <form method="POST" class="quotation-form" novalidate>
+                <!-- Personal Information -->
+                <div style="background-color: var(--gray-50); padding: var(--space-6); border-radius: var(--border-radius-lg); margin-bottom: var(--space-8);">
+                    <h3 style="margin-bottom: var(--space-6); color: var(--gray-800);">Your Information</h3>
+
+                    <div class="form-group">
+                        <label for="name" class="form-label">Full Name *</label>
+                        <input type="text" id="name" name="name" class="form-input" required
+                               placeholder="Enter your full name">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email" class="form-label">Email Address *</label>
+                        <input type="email" id="email" name="email" class="form-input" required
+                               placeholder="your.email@example.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone" class="form-label">Phone Number *</label>
+                        <input type="tel" id="phone" name="phone" class="form-input" required
+                               placeholder="(555) 123-4567">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="address" class="form-label">Property Address *</label>
+                        <textarea id="address" name="address" class="form-input" rows="3" required
+                                  placeholder="Enter the complete address where work is needed"></textarea>
+                    </div>
+                </div>
+
+                <!-- Project Details -->
+                <div style="background-color: var(--gray-50); padding: var(--space-6); border-radius: var(--border-radius-lg); margin-bottom: var(--space-8);">
+                    <h3 style="margin-bottom: var(--space-6); color: var(--gray-800);">Project Details</h3>
+
+                    <div class="form-group">
+                        <label for="service_id" class="form-label">Service Category *</label>
+                        <select id="service_id" name="service_id" class="form-input" required>
+                            <option value="">Select a service category</option>
+                            {% for service in services %}
+                            <option value="{{ service.id }}" data-description="{{ service.description }}">
+                                {{ service.icon }} {{ service.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Service Description Display -->
+                    <div id="service-description" style="display: none; background-color: var(--white); padding: var(--space-4); border-radius: var(--border-radius); border: 1px solid var(--gray-200); margin-bottom: var(--space-4);">
+                        <p id="service-desc-text" style="margin: 0; color: var(--gray-600); font-size: var(--font-size-sm);"></p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description" class="form-label">Project Description *</label>
+                        <textarea id="description" name="description" class="form-input" rows="6" required
+                                  placeholder="Please describe your project in detail. Include:
+• What needs to be repaired or installed
+• Current condition/issues
+• Your desired outcome
+• Any specific requirements or preferences
+• Timeline for completion"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Project Urgency</label>
+                        <div style="display: grid; gap: var(--space-3); grid-template-columns: 1fr;">
+                            <label style="display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--gray-300); border-radius: var(--border-radius); cursor: pointer;">
+                                <input type="radio" name="urgency" value="emergency" style="margin: 0;">
+                                <div>
+                                    <strong>🚨 Emergency</strong>
+                                    <div style="font-size: var(--font-size-sm); color: var(--gray-600);">Immediate attention needed (24-48 hours)</div>
+                                </div>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--gray-300); border-radius: var(--border-radius); cursor: pointer;">
+                                <input type="radio" name="urgency" value="urgent" style="margin: 0;" checked>
+                                <div>
+                                    <strong>⚡ Urgent</strong>
+                                    <div style="font-size: var(--font-size-sm); color: var(--gray-600);">Within a week</div>
+                                </div>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--gray-300); border-radius: var(--border-radius); cursor: pointer;">
+                                <input type="radio" name="urgency" value="normal" style="margin: 0;">
+                                <div>
+                                    <strong>📅 Normal</strong>
+                                    <div style="font-size: var(--font-size-sm); color: var(--gray-600);">Within 2-3 weeks</div>
+                                </div>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--gray-300); border-radius: var(--border-radius); cursor: pointer;">
+                                <input type="radio" name="urgency" value="flexible" style="margin: 0;">
+                                <div>
+                                    <strong>🕐 Flexible</strong>
+                                    <div style="font-size: var(--font-size-sm); color: var(--gray-600);">No rush, when convenient</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preferred Contact -->
+                <div style="background-color: var(--gray-50); padding: var(--space-6); border-radius: var(--border-radius-lg); margin-bottom: var(--space-8);">
+                    <h3 style="margin-bottom: var(--space-6); color: var(--gray-800);">Preferred Assessment Time</h3>
+
+                    <div style="display: grid; gap: var(--space-4); grid-template-columns: 1fr 1fr;">
+                        <div class="form-group">
+                            <label for="preferred_date" class="form-label">Preferred Date</label>
+                            <input type="date" id="preferred_date" name="preferred_date" class="form-input">
+                            <small style="color: var(--gray-500); font-size: var(--font-size-xs);">Optional - we'll contact you to confirm</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="preferred_time" class="form-label">Preferred Time</label>
+                            <select id="preferred_time" name="preferred_time" class="form-input">
+                                <option value="">Any time</option>
+                                <option value="09:00">9:00 AM</option>
+                                <option value="10:00">10:00 AM</option>
+                                <option value="11:00">11:00 AM</option>
+                                <option value="12:00">12:00 PM</option>
+                                <option value="13:00">1:00 PM</option>
+                                <option value="14:00">2:00 PM</option>
+                                <option value="15:00">3:00 PM</option>
+                                <option value="16:00">4:00 PM</option>
+                                <option value="17:00">5:00 PM</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Best way to contact you</label>
+                        <div style="display: flex; gap: var(--space-4); flex-wrap: wrap;">
+                            <label style="display: flex; align-items: center; gap: var(--space-2);">
+                                <input type="checkbox" name="contact_method" value="phone" checked>
+                                📞 Phone call
+                            </label>
+                            <label style="display: flex; align-items: center; gap: var(--space-2);">
+                                <input type="checkbox" name="contact_method" value="email" checked>
+                                ✉️ Email
+                            </label>
+                            <label style="display: flex; align-items: center; gap: var(--space-2);">
+                                <input type="checkbox" name="contact_method" value="text">
+                                💬 Text message
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div style="text-align: center;">
+                    <button type="submit" class="btn btn-primary btn-lg btn-full">
+                        Request Free Quotation
+                    </button>
+
+                    <div style="margin-top: var(--space-6); padding: var(--space-4); background-color: var(--success-color); color: var(--white); border-radius: var(--border-radius);">
+                        <h4 style="color: var(--white); margin-bottom: var(--space-2);">✅ What happens next?</h4>
+                        <ul style="margin: 0; padding-left: var(--space-4); font-size: var(--font-size-sm);">
+                            <li>We'll contact you within 2 hours to discuss your project</li>
+                            <li>Schedule a free on-site assessment at your convenience</li>
+                            <li>Receive a detailed, itemized quote within 24 hours</li>
+                            <li>No obligation - you decide if you want to proceed</li>
+                        </ul>
+                    </div>
+
+                    <p style="margin-top: var(--space-4); color: var(--gray-500); font-size: var(--font-size-sm);">
+                        By requesting a quotation, you agree to our
+                        <a href="{{ url_for('main.terms') }}" style="color: var(--primary-color);">Terms of Service</a> and
+                        <a href="{{ url_for('main.privacy') }}" style="color: var(--primary-color);">Privacy Policy</a>.
+                    </p>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const serviceSelect = document.getElementById('service_id');
+    const serviceDescription = document.getElementById('service-description');
+    const serviceDescText = document.getElementById('service-desc-text');
+    const dateInput = document.getElementById('preferred_date');
+
+    // Set minimum date to today
+    const today = new Date();
+    dateInput.min = today.toISOString().split('T')[0];
+
+    // Set maximum date to 30 days from now
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + 30);
+    dateInput.max = maxDate.toISOString().split('T')[0];
+
+    // Service selection handler
+    serviceSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+
+        if (selectedOption.value) {
+            const description = selectedOption.dataset.description;
+            serviceDescText.textContent = description;
+            serviceDescription.style.display = 'block';
+        } else {
+            serviceDescription.style.display = 'none';
+        }
+    });
+
+    // Phone number formatting
+    const phoneInput = document.getElementById('phone');
+    phoneInput.addEventListener('input', function() {
+        let value = this.value.replace(/\D/g, '');
+        if (value.length >= 6) {
+            value = value.substring(0, 3) + '-' + value.substring(3, 6) + '-' + value.substring(6, 10);
+        } else if (value.length >= 3) {
+            value = value.substring(0, 3) + '-' + value.substring(3);
+        }
+        this.value = value;
+    });
+
+    // Urgency radio button styling
+    const urgencyRadios = document.querySelectorAll('input[name="urgency"]');
+    urgencyRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            // Remove selected styling from all labels
+            urgencyRadios.forEach(r => {
+                r.closest('label').style.borderColor = 'var(--gray-300)';
+                r.closest('label').style.backgroundColor = 'var(--white)';
+            });
+
+            // Add selected styling to current label
+            if (this.checked) {
+                this.closest('label').style.borderColor = 'var(--primary-color)';
+                this.closest('label').style.backgroundColor = 'rgba(37, 99, 235, 0.05)';
+            }
+        });
+    });
+
+    // Set initial selected urgency styling
+    const checkedUrgency = document.querySelector('input[name="urgency"]:checked');
+    if (checkedUrgency) {
+        checkedUrgency.closest('label').style.borderColor = 'var(--primary-color)';
+        checkedUrgency.closest('label').style.backgroundColor = 'rgba(37, 99, 235, 0.05)';
+    }
+
+    // Form validation enhancement
+    const form = document.querySelector('.quotation-form');
+    const submitButton = form.querySelector('button[type="submit"]');
+
+    form.addEventListener('submit', function(e) {
+        // Show loading state
+        submitButton.disabled = true;
+        submitButton.textContent = 'Submitting Request...';
+
+        // Re-enable button after a delay if form submission fails
+        setTimeout(() => {
+            if (submitButton.disabled) {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Request Free Quotation';
+            }
+        }, 5000);
+    });
+
+    // Real-time validation feedback
+    const requiredInputs = form.querySelectorAll('input[required], select[required], textarea[required]');
+
+    requiredInputs.forEach(input => {
+        input.addEventListener('blur', function() {
+            if (this.value.trim()) {
+                this.style.borderColor = 'var(--success-color)';
+            } else {
+                this.style.borderColor = 'var(--error-color)';
+            }
+        });
+
+        input.addEventListener('input', function() {
+            if (this.style.borderColor === 'var(--error-color)' && this.value.trim()) {
+                this.style.borderColor = 'var(--success-color)';
+            }
+        });
+    });
+
+    // Character counter for description
+    const descriptionTextarea = document.getElementById('description');
+    const createCharCounter = () => {
+        const counter = document.createElement('div');
+        counter.style.textAlign = 'right';
+        counter.style.fontSize = 'var(--font-size-xs)';
+        counter.style.color = 'var(--gray-500)';
+        counter.style.marginTop = 'var(--space-1)';
+        descriptionTextarea.parentNode.appendChild(counter);
+        return counter;
+    };
+
+    const charCounter = createCharCounter();
+
+    descriptionTextarea.addEventListener('input', function() {
+        const length = this.value.length;
+        charCounter.textContent = `${length} characters`;
+
+        if (length < 50) {
+            charCounter.style.color = 'var(--warning-color)';
+        } else if (length > 500) {
+            charCounter.style.color = 'var(--error-color)';
+        } else {
+            charCounter.style.color = 'var(--success-color)';
+        }
+    });
+
+    // Trigger initial character count
+    descriptionTextarea.dispatchEvent(new Event('input'));
+});
+</script>
+{% endblock %}

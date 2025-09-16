@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}Our Services - {{ config.APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="section">
+    <div class="container">
+        <!-- Header -->
+        <div style="text-align: center; margin-bottom: var(--space-12);">
+            <h1>Our Professional Services</h1>
+            <p style="color: var(--gray-600); font-size: var(--font-size-lg); max-width: 600px; margin: 0 auto;">
+                Comprehensive home repair and maintenance services delivered by skilled professionals with quality guarantees.
+            </p>
+        </div>
+
+        <!-- Filters -->
+        <div style="background-color: var(--gray-50); padding: var(--space-6); border-radius: var(--border-radius-lg); margin-bottom: var(--space-8);">
+            <form method="GET" style="display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+                <div>
+                    <label for="category" class="form-label">Category</label>
+                    <select id="category" name="category" class="form-input">
+                        <option value="">All Categories</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat }}" {% if current_category == cat %}selected{% endif %}>
+                            {{ cat }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label for="search" class="form-label">Search Services</label>
+                    <input type="text" id="search" name="search" class="form-input"
+                           placeholder="Search by name or description" value="{{ current_search }}">
+                </div>
+
+                <div style="display: flex; align-items: end; gap: var(--space-2);">
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                    <a href="{{ url_for('services.index') }}" class="btn btn-secondary">Clear</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Services Grid -->
+        {% if services %}
+        <div style="display: grid; gap: var(--space-6); grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));">
+            {% for service in services %}
+            <div class="card" style="height: 100%; display: flex; flex-direction: column;">
+                <!-- Service Header -->
+                <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4);">
+                    <div style="font-size: var(--font-size-3xl);">{{ service.icon }}</div>
+                    <div style="flex: 1;">
+                        <h3 style="margin-bottom: var(--space-1);">{{ service.name }}</h3>
+                        <div style="background-color: var(--gray-200); color: var(--gray-700); padding: var(--space-1) var(--space-3); border-radius: var(--border-radius-sm); font-size: var(--font-size-xs); display: inline-block;">
+                            {{ service.category }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Service Description -->
+                <p style="color: var(--gray-600); margin-bottom: var(--space-4); flex: 1;">
+                    {{ service.description }}
+                </p>
+
+                <!-- Service Details -->
+                <div style="margin-bottom: var(--space-6);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--space-3); background-color: var(--gray-50); border-radius: var(--border-radius); font-size: var(--font-size-sm);">
+                        <span style="color: var(--gray-600);">
+                            ⏱️ {{ service.duration }}
+                        </span>
+                        <span style="color: var(--primary-color); font-weight: var(--font-weight-medium);">
+                            💰 {{ service.price_range }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div style="display: flex; gap: var(--space-3); margin-top: auto;">
+                    <a href="{{ url_for('main.get_started') }}?service={{ service.id }}" class="btn btn-primary" style="flex: 1;">
+                        Book Now
+                    </a>
+                    <a href="{{ url_for('main.request_quotation') }}?service={{ service.id }}" class="btn btn-outline" style="flex: 1;">
+                        Get Quote
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: var(--space-16); color: var(--gray-500);">
+            <div style="font-size: var(--font-size-3xl); margin-bottom: var(--space-4);">🔧</div>
+            <h3 style="color: var(--gray-600); margin-bottom: var(--space-2);">No services found</h3>
+            <p>
+                {% if current_category or current_search %}
+                    Try adjusting your filters or <a href="{{ url_for('services.index') }}">view all services</a>.
+                {% else %}
+                    Our service catalog is being updated. Please check back soon.
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Call to Action -->
+<section class="section" style="background-color: var(--gray-50);">
+    <div class="container">
+        <div style="text-align: center; max-width: 600px; margin: 0 auto;">
+            <h2>Don't See What You Need?</h2>
+            <p style="color: var(--gray-600); margin-bottom: var(--space-8);">
+                We offer custom solutions for unique home repair challenges. Contact us to discuss your specific needs.
+            </p>
+
+            <div style="display: flex; flex-direction: column; gap: var(--space-4); align-items: center;">
+                <a href="{{ url_for('main.request_quotation') }}" class="btn btn-primary btn-lg">
+                    Request Custom Quote
+                </a>
+                <div style="display: flex; gap: var(--space-4); flex-wrap: wrap; justify-content: center;">
+                    <a href="tel:{{ config.CONTACT_PHONE }}" class="btn btn-outline">
+                        📞 {{ config.CONTACT_PHONE }}
+                    </a>
+                    <a href="mailto:{{ config.CONTACT_EMAIL }}" class="btn btn-outline">
+                        ✉️ {{ config.CONTACT_EMAIL }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit form when category changes
+    const categoryFilter = document.getElementById('category');
+    if (categoryFilter) {
+        categoryFilter.addEventListener('change', function() {
+            this.form.submit();
+        });
+    }
+
+    // Debounced search
+    const searchInput = document.getElementById('search');
+    if (searchInput) {
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                if (this.value.length >= 2 || this.value.length === 0) {
+                    this.form.submit();
+                }
+            }, 500);
+        });
+    }
+
+    // Add hover effects to service cards
+    const serviceCards = document.querySelectorAll('.card');
+    serviceCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-4px)';
+            this.style.boxShadow = 'var(--shadow-lg)';
+        });
+
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = 'var(--shadow-sm)';
+        });
+    });
+});
+</script>
+{% endblock %}
