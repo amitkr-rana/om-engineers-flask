@@ -17,7 +17,7 @@ def init_db(app):
 def initialize_default_data():
     """Initialize default data - currently empty to allow fresh population"""
     # Import all models to ensure proper registration
-    from models import Service, Customer, Appointment
+    from models import Service, Customer, Appointment, OTP
 
     # No default services - admin will populate via web interface
     print("Database tables created successfully! Ready for admin population.")

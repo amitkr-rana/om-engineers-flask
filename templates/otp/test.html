@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}OTP Test - {{ config.APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="form-fullscreen">
+    <div class="form-container">
+        <h1>OTP Test Page</h1>
+        <p style="color: var(--gray-600); margin-bottom: var(--space-6);">
+            Test the OTP functionality with your phone number
+        </p>
+
+        <!-- Send OTP Form -->
+        <div class="card" style="margin-bottom: var(--space-6);">
+            <h3>Send OTP</h3>
+            <form id="sendOtpForm">
+                <div class="form-group">
+                    <label for="phoneNumber" class="form-label">Phone Number</label>
+                    <input type="tel" id="phoneNumber" name="phone_number" class="form-input"
+                           placeholder="Enter your phone number" required>
+                    <small style="color: var(--gray-600);">Enter 10-digit Indian mobile number</small>
+                </div>
+                <button type="submit" class="btn btn-primary">Send OTP</button>
+            </form>
+        </div>
+
+        <!-- Verify OTP Form -->
+        <div class="card" style="margin-bottom: var(--space-6);">
+            <h3>Verify OTP</h3>
+            <form id="verifyOtpForm">
+                <div class="form-group">
+                    <label for="phoneNumberVerify" class="form-label">Phone Number</label>
+                    <input type="tel" id="phoneNumberVerify" name="phone_number" class="form-input"
+                           placeholder="Enter your phone number" required>
+                </div>
+                <div class="form-group">
+                    <label for="otpCode" class="form-label">OTP Code</label>
+                    <input type="text" id="otpCode" name="otp_code" class="form-input"
+                           placeholder="Enter 6-digit OTP" maxlength="6" required>
+                </div>
+                <div style="display: flex; gap: var(--space-3);">
+                    <button type="submit" class="btn btn-primary">Verify OTP</button>
+                    <button type="button" id="resendOtp" class="btn btn-secondary">Resend OTP</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Response Messages -->
+        <div id="messages" style="display: none;"></div>
+
+        <!-- Debug Info -->
+        <div class="card">
+            <h3>Debug Info</h3>
+            <button type="button" id="getStatus" class="btn btn-outline">Get OTP Status</button>
+            <button type="button" id="cleanup" class="btn btn-outline">Cleanup Expired</button>
+            <div id="debugInfo" style="margin-top: var(--space-4); padding: var(--space-4); background: var(--gray-50); border-radius: var(--border-radius); font-family: monospace; font-size: var(--font-size-sm); display: none;"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const messagesDiv = document.getElementById('messages');
+    const debugInfo = document.getElementById('debugInfo');
+
+    function showMessage(message, type = 'info') {
+        messagesDiv.style.display = 'block';
+        messagesDiv.className = `card ${type === 'success' ? 'flash-success' : type === 'error' ? 'flash-error' : ''}`;
+        messagesDiv.innerHTML = `<p style="margin: 0;">${message}</p>`;
+        messagesDiv.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function showDebugInfo(data) {
+        debugInfo.style.display = 'block';
+        debugInfo.textContent = JSON.stringify(data, null, 2);
+    }
+
+    // Send OTP
+    document.getElementById('sendOtpForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const phoneNumber = document.getElementById('phoneNumber').value;
+
+        try {
+            const response = await fetch('/api/otp/send', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ phone_number: phoneNumber })
+            });
+
+            const data = await response.json();
+            showMessage(data.message, data.success ? 'success' : 'error');
+
+            if (data.success) {
+                // Auto-fill verify form
+                document.getElementById('phoneNumberVerify').value = phoneNumber;
+            }
+        } catch (error) {
+            showMessage('Network error: ' + error.message, 'error');
+        }
+    });
+
+    // Verify OTP
+    document.getElementById('verifyOtpForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const phoneNumber = document.getElementById('phoneNumberVerify').value;
+        const otpCode = document.getElementById('otpCode').value;
+
+        try {
+            const response = await fetch('/api/otp/verify', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    phone_number: phoneNumber,
+                    otp_code: otpCode
+                })
+            });
+
+            const data = await response.json();
+            showMessage(data.message, data.success ? 'success' : 'error');
+        } catch (error) {
+            showMessage('Network error: ' + error.message, 'error');
+        }
+    });
+
+    // Resend OTP
+    document.getElementById('resendOtp').addEventListener('click', async function() {
+        const phoneNumber = document.getElementById('phoneNumberVerify').value;
+
+        if (!phoneNumber) {
+            showMessage('Please enter phone number first', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/otp/resend', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ phone_number: phoneNumber })
+            });
+
+            const data = await response.json();
+            showMessage(data.message, data.success ? 'success' : 'error');
+        } catch (error) {
+            showMessage('Network error: ' + error.message, 'error');
+        }
+    });
+
+    // Get Status
+    document.getElementById('getStatus').addEventListener('click', async function() {
+        const phoneNumber = document.getElementById('phoneNumberVerify').value;
+
+        if (!phoneNumber) {
+            showMessage('Please enter phone number first', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/otp/status/${phoneNumber}`);
+            const data = await response.json();
+            showMessage(data.message, data.success ? 'success' : 'error');
+            showDebugInfo(data);
+        } catch (error) {
+            showMessage('Network error: ' + error.message, 'error');
+        }
+    });
+
+    // Cleanup
+    document.getElementById('cleanup').addEventListener('click', async function() {
+        try {
+            const response = await fetch('/api/otp/cleanup', {
+                method: 'POST'
+            });
+
+            const data = await response.json();
+            showMessage(data.message, data.success ? 'success' : 'error');
+        } catch (error) {
+            showMessage('Network error: ' + error.message, 'error');
+        }
+    });
+});
+</script>
+{% endblock %}

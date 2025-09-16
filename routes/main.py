@@ -12,9 +12,8 @@ def index():
 
 @main_bp.route('/get-started')
 def get_started():
-    """Get started form for service booking"""
-    services = Service.get_all()
-    return render_template('get_started.html', services=services)
+    """OTP login page for accessing services"""
+    return render_template('otp_login.html')
 
 @main_bp.route('/get-started', methods=['POST'])
 def get_started_post():
@@ -202,6 +201,11 @@ def privacy():
 def terms():
     """Terms of service page"""
     return render_template('terms.html')
+
+@main_bp.route('/dashboard')
+def dashboard():
+    """User dashboard after successful OTP login"""
+    return render_template('user_dashboard.html')
 
 @main_bp.context_processor
 def utility_processor():

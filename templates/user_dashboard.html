@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - {{ config.APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <div class="container">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1>Welcome to {{ config.APP_NAME }}!</h1>
+                    <p style="color: var(--gray-600); margin: 0;">You have successfully logged in with OTP verification.</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('main.index') }}" class="btn btn-outline">← Back to Home</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-content">
+        <div class="container">
+            <div class="success-message">
+                <div class="success-icon">✅</div>
+                <h2>Login Successful!</h2>
+                <p>Your phone number has been verified successfully. This is a placeholder dashboard.</p>
+
+                <div style="margin-top: var(--space-8);">
+                    <h3>Next Steps:</h3>
+                    <ul style="text-align: left; max-width: 400px; margin: 0 auto;">
+                        <li>Browse our available services</li>
+                        <li>Schedule a repair appointment</li>
+                        <li>Track your service requests</li>
+                        <li>Manage your account settings</li>
+                    </ul>
+                </div>
+
+                <div class="dashboard-actions">
+                    <a href="{{ url_for('services.index') }}" class="btn btn-primary">Browse Services</a>
+                    <a href="{{ url_for('main.request_quotation') }}" class="btn btn-outline">Request Quote</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block head %}
+<style>
+.dashboard-container {
+    min-height: calc(100vh - var(--header-height));
+}
+
+.dashboard-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: var(--space-8) 0;
+}
+
+.dashboard-header h1 {
+    color: white;
+    margin: 0 0 var(--space-2) 0;
+}
+
+.dashboard-content {
+    padding: var(--space-12) 0;
+}
+
+.success-message {
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto;
+    background: white;
+    padding: var(--space-12);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-lg);
+}
+
+.success-icon {
+    font-size: 64px;
+    margin-bottom: var(--space-4);
+}
+
+.success-message h2 {
+    color: var(--primary-color);
+    margin-bottom: var(--space-4);
+}
+
+.success-message p {
+    color: var(--gray-600);
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--space-8);
+}
+
+.success-message h3 {
+    color: var(--gray-800);
+    margin-bottom: var(--space-4);
+}
+
+.success-message ul {
+    color: var(--gray-700);
+    line-height: 1.6;
+    margin-bottom: var(--space-8);
+}
+
+.success-message li {
+    margin-bottom: var(--space-2);
+}
+
+.dashboard-actions {
+    display: flex;
+    gap: var(--space-4);
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .dashboard-header div {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--space-4);
+    }
+
+    .success-message {
+        margin: var(--space-4);
+        padding: var(--space-8);
+    }
+
+    .dashboard-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .dashboard-actions .btn {
+        width: 100%;
+        max-width: 300px;
+    }
+}
+</style>
+{% endblock %}

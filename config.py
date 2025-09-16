@@ -20,3 +20,10 @@ class Config:
     CONTACT_PHONE = '+917762924431'
     CONTACT_EMAIL = 'omengineers324@gmail.com'
     CONTACT_ADDRESS = 'Khatanga Ranchi, Jharkhand 834009'
+
+    # Fast2SMS API Configuration
+    FAST2SMS_API_KEY = '4arM7o4FY7pK5cyjUlrBcXa5UlcmYlJZGrbrlZsuQ0d8ZQ5Syvs3xe6JSZgU'
+
+    # OTP Configuration
+    OTP_EXPIRY_MINUTES = 10  # OTP valid for 10 minutes
+    OTP_LENGTH = 6  # 6 digit OTP
