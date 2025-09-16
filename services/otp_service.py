@@ -37,7 +37,23 @@ class OTPService:
             # Normalize phone number
             normalized_phone = OTPService.normalize_phone_number(phone_number)
 
-            # Create new OTP
+            # Check if it's the test number to save SMS credits
+            if normalized_phone == "9123187562":
+                # Create test OTP with fixed code
+                otp_record = OTP.create_new_otp(
+                    normalized_phone,
+                    current_app.config.get('OTP_LENGTH', 6),
+                    current_app.config.get('OTP_EXPIRY_MINUTES', 10)
+                )
+                # Override with fixed test OTP
+                otp_record.otp_code = "123456"
+                from database import db
+                db.session.commit()
+
+                current_app.logger.info(f"Test OTP created for {normalized_phone}: 123456")
+                return True, f"OTP sent successfully to {normalized_phone}"
+
+            # Create new OTP for real numbers
             otp_record = OTP.create_new_otp(
                 normalized_phone,
                 current_app.config.get('OTP_LENGTH', 6),
