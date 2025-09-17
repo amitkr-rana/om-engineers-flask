@@ -327,8 +327,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     markAllReadBtn.style.display = 'none';
 
                     // Show success message
-                    showToast('All notifications marked as read');
-
+                    
                     // Update badge count on dashboard (if parent window exists for iframe)
                     if (window.parent && window.parent !== window) {
                         try {
@@ -393,7 +392,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else if (data.type === 'notification_update') {
                     // New notification received - refresh the list
                     checkForNewNotifications();
-                    showToast('New notification received!');
+                    playNotificationSound();
                 } else if (data.type === 'keepalive') {
                     // Keepalive message - ignore
                 }
@@ -446,7 +445,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (currentNotificationCount > lastNotificationCount) {
                 // New notifications arrived
                 updateNotificationsList(data.notifications);
-                showToast('New notification received!');
             } else if (currentUnreadCount !== lastUnreadCount) {
                 // Unread count changed (might be from other window)
                 updateNotificationsList(data.notifications);
@@ -681,6 +679,29 @@ function showToast(message, type = 'success') {
     setTimeout(() => {
         toast.remove();
     }, 3000);
+}
+
+// Play notification sound
+function playNotificationSound() {
+    try {
+        // Create audio element and play notification sound
+        const audio = new Audio('/static/sounds/notify.mp3');
+        audio.volume = 1; // Set volume to 100%
+
+        // Play with user interaction handling
+        const playPromise = audio.play();
+
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                console.log('Notification sound played successfully');
+            }).catch(error => {
+                console.log('Could not play notification sound (user interaction required):', error);
+                // Store that we tried to play sound - could implement click-to-enable later
+            });
+        }
+    } catch (error) {
+        console.log('Error playing notification sound:', error);
+    }
 }
 </script>
 {% endblock %}

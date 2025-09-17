@@ -505,9 +505,17 @@ function updateNotificationBadge(count) {
     const badge = document.getElementById('notificationBadge');
     if (!badge) return;
 
+    const previousCount = parseInt(badge.textContent) || 0;
+    const isNewNotification = count > previousCount;
+
     if (count > 0) {
         badge.textContent = count > 99 ? '99+' : count.toString();
         badge.style.display = 'flex';
+
+        // Play sound for new notifications
+        if (isNewNotification && count > 0) {
+            playNotificationSound();
+        }
     } else {
         badge.style.display = 'none';
     }
@@ -608,6 +616,28 @@ function startNotificationStream() {
         // Fall back to polling if SSE fails
         eventSource.close();
     };
+}
+
+function playNotificationSound() {
+    try {
+        // Create audio element and play notification sound
+        const audio = new Audio('/static/sounds/notify.mp3');
+        audio.volume = 1; // Set volume to 100%
+
+        // Play with user interaction handling
+        const playPromise = audio.play();
+
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                console.log('Notification sound played successfully');
+            }).catch(error => {
+                console.log('Could not play notification sound (user interaction required):', error);
+                // Store that we tried to play sound - could implement click-to-enable later
+            });
+        }
+    } catch (error) {
+        console.log('Error playing notification sound:', error);
+    }
 }
 
 // No resize handler needed - logout button stays on all screen sizes
