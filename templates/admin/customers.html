@@ -3,6 +3,37 @@
 {% block title %}Customers - Admin Panel{% endblock %}
 
 {% block content %}
+<style>
+/* Ensure address column is visible */
+.admin-table {
+    min-width: 800px;
+    table-layout: fixed;
+}
+
+.admin-table th:nth-child(1) { width: 60px; }  /* ID */
+.admin-table th:nth-child(2) { width: 150px; } /* Name */
+.admin-table th:nth-child(3) { width: 180px; } /* Email */
+.admin-table th:nth-child(4) { width: 120px; } /* Phone */
+.admin-table th:nth-child(5) { width: 250px; } /* Address */
+.admin-table th:nth-child(6) { width: 100px; } /* Created */
+.admin-table th:nth-child(7) { width: 80px; }  /* Appointments */
+.admin-table th:nth-child(8) { width: 150px; } /* Actions */
+
+.address-column {
+    font-size: var(--font-size-sm);
+}
+
+/* Horizontal scroll for small screens */
+@media (max-width: 1200px) {
+    .card {
+        overflow-x: auto;
+    }
+
+    .admin-table {
+        min-width: 1000px;
+    }
+}
+</style>
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6);">
     <h1>Customers Management</h1>
     <a href="{{ url_for('admin.new_customer') }}" class="btn btn-primary">➕ Add Customer</a>
@@ -33,6 +64,7 @@
                 <th>Name</th>
                 <th>Email</th>
                 <th>Phone</th>
+                <th>Address</th>
                 <th>Created</th>
                 <th>Appointments</th>
                 <th>Actions</th>
@@ -45,6 +77,12 @@
                 <td>{{ customer.name }}</td>
                 <td>{{ customer.email }}</td>
                 <td>{{ customer.phone }}</td>
+                <td class="address-column">
+                    <div style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                         title="{{ customer.address or 'No address provided' }}">
+                        {{ customer.address or 'No address' }}
+                    </div>
+                </td>
                 <td>{{ customer.created_at.strftime('%m/%d/%Y') }}</td>
                 <td>{{ customer.appointments|length }}</td>
                 <td>

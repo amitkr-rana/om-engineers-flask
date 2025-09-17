@@ -63,6 +63,7 @@
                     <tr>
                         <th>Name</th>
                         <th>Email</th>
+                        <th>Address</th>
                         <th>Created</th>
                     </tr>
                 </thead>
@@ -71,6 +72,12 @@
                     <tr>
                         <td>{{ customer.name }}</td>
                         <td>{{ customer.email }}</td>
+                        <td>
+                            <div style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                                 title="{{ customer.address or 'No address provided' }}">
+                                {{ customer.address or 'No address' }}
+                            </div>
+                        </td>
                         <td>{{ customer.created_at.strftime('%m/%d/%Y') }}</td>
                     </tr>
                     {% endfor %}

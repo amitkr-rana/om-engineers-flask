@@ -63,6 +63,12 @@
                         <div style="font-size: var(--font-size-xs); color: var(--gray-600);">
                             {{ customer.email }}
                         </div>
+                        {% if customer.address %}
+                        <div style="font-size: var(--font-size-xs); color: var(--gray-500); max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                             title="{{ customer.address }}">
+                            📍 {{ customer.address }}
+                        </div>
+                        {% endif %}
                         {% endif %}
                     </div>
                 </td>

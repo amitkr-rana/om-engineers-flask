@@ -13,18 +13,11 @@ def send_otp():
     try:
         data = request.get_json() if request.is_json else request.form
         phone_number = data.get('phone_number', '').strip()
-        customer_name = data.get('customer_name', '').strip()
 
         if not phone_number:
             return jsonify({
                 'success': False,
                 'message': 'Phone number is required'
-            }), 400
-
-        if not customer_name:
-            return jsonify({
-                'success': False,
-                'message': 'Customer name is required'
             }), 400
 
         # Send OTP
@@ -43,13 +36,11 @@ def send_otp():
 
 @otp_bp.route('/verify', methods=['POST'])
 def verify_otp():
-    """Verify OTP code"""
+    """Verify OTP code and implement three-scenario logic"""
     try:
         data = request.get_json() if request.is_json else request.form
         phone_number = data.get('phone_number', '').strip()
         otp_code = data.get('otp_code', '').strip()
-        customer_name = data.get('customer_name', '').strip()
-
 
         if not phone_number or not otp_code:
             return jsonify({
@@ -57,49 +48,41 @@ def verify_otp():
                 'message': 'Phone number and OTP code are required'
             }), 400
 
-        if not customer_name:
-            return jsonify({
-                'success': False,
-                'message': 'Customer name is required'
-            }), 400
-
         # Verify OTP
         success, message = OTPService.verify_otp(phone_number, otp_code)
 
         if success:
-            # Create or update customer record in database
-            try:
-                # Check if customer already exists by phone
-                existing_customer = Customer.get_by_phone(phone_number)
+            # Check for existing customers with this phone number
+            customers = Customer.get_all_by_phone(phone_number)
 
-                if existing_customer:
-                    # Update existing customer
-                    existing_customer.name = customer_name
-                    existing_customer.updated_at = datetime.utcnow()
-                    db.session.commit()
-                    customer = existing_customer
-                else:
-                    # Create new customer
-                    customer = Customer(
-                        name=customer_name,
-                        email=None,
-                        phone=phone_number,
-                        address=""
-                    )
-                    db.session.add(customer)
-                    db.session.commit()
+            if len(customers) == 0:
+                # Scenario 1: Phone number not in database - redirect to profile completion
+                session['phone_number'] = phone_number
+                return jsonify({
+                    'success': True,
+                    'message': 'OTP verified successfully',
+                    'redirect_url': url_for('main.profile_completion')
+                }), 200
 
-                # Store customer information in session
+            elif len(customers) == 1:
+                # Scenario 3: Single account - redirect directly to dashboard
+                customer = customers[0]
                 session['customer_id'] = customer.id
                 session['customer_phone'] = customer.phone
+                return jsonify({
+                    'success': True,
+                    'message': 'OTP verified successfully',
+                    'redirect_url': url_for('main.dashboard', phone=phone_number)
+                }), 200
 
-            except Exception as e:
-                # Rollback any partial changes
-                db.session.rollback()
-
-                # Fallback - store in session only
-                session['customer_name'] = customer_name
-                session['customer_phone'] = phone_number
+            else:
+                # Scenario 2: Multiple accounts - redirect to account selection
+                session['phone_number'] = phone_number
+                return jsonify({
+                    'success': True,
+                    'message': 'OTP verified successfully',
+                    'redirect_url': url_for('main.account_selection')
+                }), 200
 
         return jsonify({
             'success': success,

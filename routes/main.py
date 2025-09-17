@@ -1,9 +1,43 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from datetime import datetime, date, time
 from models import Customer, Service, Appointment, AppointmentType
 from database import db
+import requests
+import re
 
 main_bp = Blueprint('main', __name__)
+
+def sanitize_text(text):
+    """Sanitize and format text fields"""
+    if not text:
+        return ""
+
+    # Remove extra whitespace and normalize
+    text = re.sub(r'\s+', ' ', text.strip())
+
+    # Remove special characters but keep common punctuation
+    text = re.sub(r'[^\w\s\-\.\,\(\)\/]', '', text)
+
+    # Title case for proper names
+    text = text.title()
+
+    return text
+
+def sanitize_address_component(component):
+    """Sanitize individual address components"""
+    if not component:
+        return ""
+
+    # Basic sanitization
+    component = re.sub(r'\s+', ' ', component.strip())
+
+    # Remove unwanted characters but keep common punctuation
+    component = re.sub(r'[^\w\s\-\.\,\(\)\/\#]', '', component)
+
+    # Title case
+    component = component.title()
+
+    return component
 
 @main_bp.route('/')
 def index():
@@ -231,6 +265,298 @@ def dashboard():
                          customer_name=customer_name,
                          customer_phone=customer_phone,
                          customer=customer)
+
+@main_bp.route('/profile-completion')
+def profile_completion():
+    """Profile completion page for new users"""
+    # Check if phone number is in session
+    if 'phone_number' not in session:
+        flash('Session expired. Please login again.', 'error')
+        return redirect(url_for('main.get_started'))
+
+    return render_template('profile_completion.html')
+
+@main_bp.route('/profile-completion', methods=['POST'])
+def profile_completion_post():
+    """Handle profile completion form submission"""
+    try:
+        # Check if phone number is in session
+        if 'phone_number' not in session:
+            return jsonify({
+                'success': False,
+                'message': 'Session expired. Please login again.'
+            }), 400
+
+        data = request.get_json() if request.is_json else request.form
+        full_name = data.get('full_name', '').strip()
+        email = data.get('email', '').strip().lower()
+        house = data.get('house', '').strip()
+        road = data.get('road', '').strip()
+        landmark = data.get('landmark', '').strip()
+        zip_code = data.get('zip_code', '').strip()
+        city = data.get('city', '').strip()
+        state = data.get('state', '').strip()
+
+        # Server-side validation
+        if not all([full_name, email, house, road, zip_code, city, state]):
+            return jsonify({
+                'success': False,
+                'message': 'All required fields must be filled'
+            }), 400
+
+        # Validate field lengths
+        if len(full_name) < 2:
+            return jsonify({
+                'success': False,
+                'message': 'Name must be at least 2 characters long'
+            }), 400
+
+        # Email validation
+        email_pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
+        if not re.match(email_pattern, email):
+            return jsonify({
+                'success': False,
+                'message': 'Please enter a valid email address'
+            }), 400
+
+        # PIN code validation (6 digits)
+        if not re.match(r'^\d{6}$', zip_code):
+            return jsonify({
+                'success': False,
+                'message': 'Please enter a valid 6-digit PIN code'
+            }), 400
+
+        # Name validation (letters, spaces, common punctuation only)
+        name_pattern = r'^[a-zA-Z\s\-\'\.]+$'
+        if not re.match(name_pattern, full_name):
+            return jsonify({
+                'success': False,
+                'message': 'Name can only contain letters, spaces, hyphens, and apostrophes'
+            }), 400
+
+        phone_number = session['phone_number']
+
+        # Sanitize all fields
+        full_name = sanitize_text(full_name)
+        house = sanitize_address_component(house)
+        road = sanitize_address_component(road)
+        landmark = sanitize_address_component(landmark) if landmark else ""
+        city = sanitize_address_component(city)
+        state = sanitize_address_component(state)
+        zip_code = re.sub(r'[^\d]', '', zip_code)  # Only digits for ZIP
+
+        # Combine address components
+        address_parts = [house, road]
+        if landmark:
+            address_parts.append(landmark)
+        address_parts.extend([city, f"{state} {zip_code}"])
+        address = ", ".join(address_parts)
+
+        # Create new customer
+        customer = Customer(
+            name=full_name,
+            email=email,
+            phone=phone_number,
+            address=address
+        )
+        db.session.add(customer)
+        db.session.commit()
+
+        # Store customer information in session
+        session['customer_id'] = customer.id
+        session['customer_phone'] = customer.phone
+        session.pop('phone_number', None)  # Remove temporary phone number
+
+        return jsonify({
+            'success': True,
+            'message': 'Profile completed successfully',
+            'redirect_url': url_for('main.dashboard', phone=phone_number)
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': f'Server error: {str(e)}'
+        }), 500
+
+@main_bp.route('/account-selection')
+def account_selection():
+    """Account selection page for users with multiple accounts"""
+    # Check if phone number is in session
+    if 'phone_number' not in session:
+        flash('Session expired. Please login again.', 'error')
+        return redirect(url_for('main.get_started'))
+
+    phone_number = session['phone_number']
+    customers = Customer.get_all_by_phone(phone_number)
+
+    if len(customers) <= 1:
+        flash('Invalid access to account selection.', 'error')
+        return redirect(url_for('main.get_started'))
+
+    return render_template('account_selection.html', customers=customers)
+
+@main_bp.route('/account-selection', methods=['POST'])
+def account_selection_post():
+    """Handle account selection form submission"""
+    try:
+        # Check if phone number is in session
+        if 'phone_number' not in session:
+            return jsonify({
+                'success': False,
+                'message': 'Session expired. Please login again.'
+            }), 400
+
+        data = request.get_json() if request.is_json else request.form
+        customer_id = data.get('customer_id')
+
+        if not customer_id:
+            return jsonify({
+                'success': False,
+                'message': 'Customer ID is required'
+            }), 400
+
+        phone_number = session['phone_number']
+
+        # Verify the customer belongs to this phone number
+        customer = Customer.query.get(customer_id)
+        if not customer:
+            return jsonify({
+                'success': False,
+                'message': 'Invalid customer selected'
+            }), 400
+
+        # Verify phone number matches
+        customer_clean_phone = ''.join(filter(str.isdigit, customer.phone))
+        session_clean_phone = ''.join(filter(str.isdigit, phone_number))
+
+        if customer_clean_phone != session_clean_phone:
+            return jsonify({
+                'success': False,
+                'message': 'Invalid customer selected'
+            }), 400
+
+        # Store customer information in session
+        session['customer_id'] = customer.id
+        session['customer_phone'] = customer.phone
+        session.pop('phone_number', None)  # Remove temporary phone number
+
+        return jsonify({
+            'success': True,
+            'message': 'Account selected successfully',
+            'redirect_url': url_for('main.dashboard', phone=phone_number)
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Server error: {str(e)}'
+        }), 500
+
+@main_bp.route('/api/pincode/<pincode>')
+def get_pincode_info(pincode):
+    """Get city and state information from PIN code"""
+    try:
+        # Validate PIN code format
+        if not pincode.isdigit() or len(pincode) != 6:
+            return jsonify({
+                'success': False,
+                'message': 'Invalid PIN code format'
+            }), 400
+
+        # Try multiple reliable API sources, starting with government data
+        api_calls = [
+            {
+                'url': f'https://api.data.gov.in/catalog/709e9d78-bf11-487d-93fd-d547d24cc0ef?api-key=579b464db66ec23bdd0000015c26426692c446bb66a7696808147718&format=json&filters%5Bpincode%5D={pincode}',
+                'type': 'gov_data'
+            },
+            {
+                'url': f'https://api.postalpincode.in/pincode/{pincode}',
+                'type': 'new_format'
+            },
+            {
+                'url': f'http://www.postalpincode.in/api/pincode/{pincode}',
+                'type': 'old_format'
+            },
+            {
+                'url': f'https://api.zippopotam.us/IN/{pincode}',
+                'type': 'zippopotam'
+            }
+        ]
+
+        for api_call in api_calls:
+            try:
+                api_url = api_call['url']
+                api_type = api_call['type']
+                # Remove debug logs for faster execution
+                response = requests.get(api_url, timeout=3)
+
+                if response.status_code == 200:
+                    data = response.json()
+
+                    if api_type == 'gov_data':
+                        # Government data.gov.in API format
+                        if 'records' in data and len(data['records']) > 0:
+                            location = data['records'][0]
+                            return jsonify({
+                                'success': True,
+                                'city': location.get('district', ''),
+                                'state': location.get('statename', ''),
+                                'area': location.get('officename', ''),
+                                'circle': location.get('circlename', ''),
+                                'region': location.get('regionname', '')
+                            }), 200
+
+                    elif api_type == 'new_format':
+                        # New postalpincode.in API format (array)
+                        if isinstance(data, list) and len(data) > 0:
+                            post_office_data = data[0]
+                            if post_office_data.get('Status') == 'Success' and post_office_data.get('PostOffice'):
+                                location = post_office_data['PostOffice'][0]
+                                return jsonify({
+                                    'success': True,
+                                    'city': location.get('District', ''),
+                                    'state': location.get('State', ''),
+                                    'area': location.get('Name', '')
+                                }), 200
+
+                    elif api_type == 'old_format':
+                        # Old postalpincode.in API format (object)
+                        if data.get('Status') == 'Success' and data.get('PostOffice'):
+                            location = data['PostOffice'][0]
+                            return jsonify({
+                                'success': True,
+                                'city': location.get('District', ''),
+                                'state': location.get('State', ''),
+                                'area': location.get('Name', '')
+                            }), 200
+
+                    elif api_type == 'zippopotam':
+                        # Zippopotam.us API format
+                        if 'places' in data and len(data['places']) > 0:
+                            location = data['places'][0]
+                            return jsonify({
+                                'success': True,
+                                'city': location.get('place name', ''),
+                                'state': location.get('state', ''),
+                                'area': location.get('place name', '')
+                            }), 200
+
+            except requests.exceptions.RequestException:
+                # Fail silently and try next API
+                continue
+
+        return jsonify({
+            'success': False,
+            'message': 'PIN code not found in any data source'
+        }), 404
+
+    except Exception:
+        return jsonify({
+            'success': False,
+            'message': 'Service temporarily unavailable'
+        }), 500
 
 @main_bp.context_processor
 def utility_processor():

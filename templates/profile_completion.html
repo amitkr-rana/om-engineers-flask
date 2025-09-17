@@ -1,0 +1,493 @@
+{% extends "base.html" %}
+
+{% block title %}Complete Your Profile - {{ config.APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="profile-completion-fullscreen">
+    <div class="profile-header">
+        <h2 class="profile-title">Let's get you set up</h2>
+        <p class="profile-subtitle">Please fill in the details below to complete your profile.</p>
+    </div>
+
+    <form id="profileForm" class="profile-form">
+        <div class="form-group">
+            <label for="fullName" class="form-label">Full Name</label>
+            <input type="text" id="fullName" name="full_name" class="form-input" placeholder="John Doe" required>
+        </div>
+
+        <div class="form-group">
+            <label for="emailAddress" class="form-label">Email Address</label>
+            <input type="email" id="emailAddress" name="email" class="form-input" placeholder="you@example.com" required>
+            <div class="form-hint">Used to send invoices</div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Address</label>
+            <div class="address-fields">
+                <input type="text" id="house" name="house" class="form-input" placeholder="House/Building" required>
+                <input type="text" id="road" name="road" class="form-input" placeholder="Road/Locality" required>
+                <div class="form-row form-row-keep-inline">
+                    <input type="text" id="landmark" name="landmark" class="form-input" placeholder="Landmark">
+                    <input type="text" id="zipCode" name="zip_code" class="form-input" placeholder="ZIP Code" required>
+                </div>
+                <div class="form-row form-row-keep-inline">
+                    <input type="text" id="city" name="city" class="form-input" placeholder="City" required>
+                    <input type="text" id="state" name="state" class="form-input" placeholder="State" required>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" id="saveBtn" class="save-btn">Save and Continue</button>
+    </form>
+
+    <!-- Loading overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Messages -->
+    <div id="messageContainer" class="message-container"></div>
+</div>
+{% endblock %}
+
+{% block head %}
+<style>
+/* Profile Completion - Mobile-First Design */
+.profile-completion-fullscreen {
+    min-height: calc(100vh - var(--header-height));
+    min-height: calc(100dvh - var(--header-height));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4);
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.profile-header {
+    text-align: center;
+    margin-bottom: var(--space-8);
+    width: 100%;
+}
+
+.profile-title {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--gray-900);
+    margin-bottom: var(--space-2);
+}
+
+.profile-subtitle {
+    font-size: var(--font-size-base);
+    color: var(--gray-600);
+    line-height: 1.5;
+}
+
+.profile-form {
+    width: 100%;
+}
+
+.form-group {
+    margin-bottom: var(--space-6);
+}
+
+.address-fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    border-radius: var(--border-radius-lg);
+    padding: var(--space-4);
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+}
+
+.address-fields .form-input {
+    background: var(--white);
+    border: 1px solid var(--gray-300);
+}
+
+.form-row {
+    display: flex;
+    gap: var(--space-3);
+}
+
+.form-label {
+    display: block;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--gray-700);
+    margin-bottom: var(--space-2);
+}
+
+.form-hint {
+    font-size: var(--font-size-xs);
+    color: var(--gray-500);
+    margin-top: var(--space-1);
+}
+
+.form-input,
+.form-textarea {
+    width: 100%;
+    border: 2px solid var(--gray-300);
+    border-radius: var(--border-radius-lg);
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--font-size-base);
+    outline: none;
+    transition: all 0.2s;
+    background: var(--white);
+    font-family: inherit;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+    color: var(--gray-400);
+}
+
+.form-textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.save-btn {
+    width: 100%;
+    background: var(--primary-color);
+    color: var(--white);
+    border: none;
+    border-radius: var(--border-radius-lg);
+    padding: var(--space-4);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: var(--space-4);
+}
+
+.save-btn:hover:not(:disabled) {
+    background: #2563EB;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.save-btn:disabled {
+    background: var(--gray-300);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Loading and Messages */
+.loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.loading-overlay.active {
+    display: flex;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top: 4px solid var(--white);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.message-container {
+    position: fixed;
+    top: calc(var(--header-height) + var(--space-4));
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1001;
+    max-width: 400px;
+    width: 90%;
+}
+
+.message {
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--border-radius-lg);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: var(--space-2);
+    animation: slideDown 0.3s ease-in-out;
+    box-shadow: var(--shadow-lg);
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.message.success {
+    background: var(--success-color);
+    color: var(--white);
+}
+
+.message.error {
+    background: var(--error-color);
+    color: var(--white);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 480px) {
+    .profile-completion-fullscreen {
+        padding: var(--space-2);
+    }
+
+    .profile-title {
+        font-size: var(--font-size-xl);
+    }
+
+    .form-input,
+    .form-textarea,
+    .save-btn {
+        border-radius: var(--border-radius);
+    }
+
+    .form-row-mobile-stack {
+        flex-direction: column;
+        gap: var(--space-3);
+    }
+
+    .form-row-keep-inline {
+        flex-direction: row;
+        gap: var(--space-2);
+    }
+}
+
+@media (max-height: 600px) {
+    .profile-completion-fullscreen {
+        align-items: flex-start;
+        padding-top: var(--space-8);
+    }
+
+    .profile-header {
+        margin-bottom: var(--space-6);
+    }
+
+    .form-group {
+        margin-bottom: var(--space-4);
+    }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const profileForm = document.getElementById('profileForm');
+    const saveBtn = document.getElementById('saveBtn');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const messageContainer = document.getElementById('messageContainer');
+
+    // Auto-focus first input
+    document.getElementById('fullName').focus();
+
+    // PIN code auto-population
+    const zipCodeInput = document.getElementById('zipCode');
+    const cityInput = document.getElementById('city');
+    const stateInput = document.getElementById('state');
+
+    // Debounce function to prevent excessive API calls
+    let fetchTimeout;
+
+    zipCodeInput.addEventListener('input', function() {
+        const pincode = this.value.trim();
+
+        // Clear previous timeout
+        clearTimeout(fetchTimeout);
+
+        // Set new timeout to fetch after user stops typing
+        if (pincode.length === 6 && /^\d{6}$/.test(pincode)) {
+            fetchTimeout = setTimeout(() => {
+                fetchLocationFromPincode(pincode);
+            }, 500); // Wait 500ms after user stops typing
+        }
+    });
+
+    async function fetchLocationFromPincode(pincode) {
+        try {
+            showLoading(true);
+
+            // Using our backend API to avoid CORS issues
+            const response = await fetch(`/api/pincode/${pincode}`);
+            const data = await response.json();
+
+            if (data.success) {
+                // Auto-fill city and state silently with proper title case
+                cityInput.value = toTitleCase(data.city || '');
+                stateInput.value = toTitleCase(data.state || '');
+            }
+            // If PIN code not found, fail silently - user can enter manually
+        } catch (error) {
+            // Fail silently - user can manually enter
+            console.log('PIN code lookup failed:', error);
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    // Helper function to convert text to title case
+    function toTitleCase(str) {
+        return str.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+    }
+
+    // Form submission
+    profileForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(profileForm);
+        const fullName = formData.get('full_name').trim();
+        const email = formData.get('email').trim();
+        const house = formData.get('house').trim();
+        const road = formData.get('road').trim();
+        const landmark = formData.get('landmark').trim();
+        const zipCode = formData.get('zip_code').trim();
+        const city = formData.get('city').trim();
+        const state = formData.get('state').trim();
+
+        // Basic validation
+        if (!fullName || fullName.length < 2) {
+            showMessage('Please enter your full name (at least 2 characters)', 'error');
+            return;
+        }
+
+        if (!email) {
+            showMessage('Please enter your email address', 'error');
+            return;
+        }
+
+        if (!house || house.length < 2) {
+            showMessage('Please enter your house/building address', 'error');
+            return;
+        }
+
+        if (!road || road.length < 2) {
+            showMessage('Please enter your road/locality', 'error');
+            return;
+        }
+
+        if (!zipCode) {
+            showMessage('Please enter your ZIP code', 'error');
+            return;
+        }
+
+        if (!city || city.length < 2) {
+            showMessage('Please enter your city', 'error');
+            return;
+        }
+
+        if (!state || state.length < 2) {
+            showMessage('Please enter your state', 'error');
+            return;
+        }
+
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            showMessage('Please enter a valid email address', 'error');
+            return;
+        }
+
+        // ZIP code validation (Indian PIN code: 6 digits)
+        const zipRegex = /^\d{6}$/;
+        if (!zipRegex.test(zipCode)) {
+            showMessage('Please enter a valid 6-digit PIN code', 'error');
+            return;
+        }
+
+        // Name validation (no special characters except spaces, hyphens, apostrophes)
+        const nameRegex = /^[a-zA-Z\s\-\'\.]+$/;
+        if (!nameRegex.test(fullName)) {
+            showMessage('Name can only contain letters, spaces, hyphens, and apostrophes', 'error');
+            return;
+        }
+
+        // Send individual address components for server-side sanitization
+        await saveProfile(fullName, email, house, road, landmark, zipCode, city, state);
+    });
+
+    async function saveProfile(fullName, email, house, road, landmark, zipCode, city, state) {
+        showLoading(true);
+        saveBtn.disabled = true;
+
+        try {
+            const response = await fetch('/profile-completion', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    full_name: fullName,
+                    email: email,
+                    house: house,
+                    road: road,
+                    landmark: landmark,
+                    zip_code: zipCode,
+                    city: city,
+                    state: state
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showMessage('Profile saved successfully! Redirecting...', 'success');
+                setTimeout(() => {
+                    window.location.href = data.redirect_url || '/dashboard';
+                }, 1500);
+            } else {
+                showMessage(data.message || 'Failed to save profile', 'error');
+                saveBtn.disabled = false;
+            }
+        } catch (error) {
+            showMessage('Network error. Please try again.', 'error');
+            saveBtn.disabled = false;
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    function showLoading(show) {
+        if (show) {
+            loadingOverlay.classList.add('active');
+        } else {
+            loadingOverlay.classList.remove('active');
+        }
+    }
+
+    function showMessage(message, type = 'info') {
+        const messageEl = document.createElement('div');
+        messageEl.className = `message ${type}`;
+        messageEl.textContent = message;
+
+        messageContainer.appendChild(messageEl);
+
+        setTimeout(() => {
+            messageEl.remove();
+        }, 5000);
+    }
+});
+</script>
+{% endblock %}

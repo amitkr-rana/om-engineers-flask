@@ -50,6 +50,21 @@ class Customer(db.Model):
         return None
 
     @classmethod
+    def get_all_by_phone(cls, phone: str):
+        """Get all customers with the same phone number"""
+        # Clean phone number for comparison
+        clean_phone = ''.join(filter(str.isdigit, phone))
+        customers = cls.query.all()
+
+        matching_customers = []
+        for customer in customers:
+            customer_clean_phone = ''.join(filter(str.isdigit, customer.phone))
+            if customer_clean_phone == clean_phone:
+                matching_customers.append(customer)
+
+        return matching_customers
+
+    @classmethod
     def search(cls, query: str):
         """Search customers by name, email, or phone"""
         return cls.query.filter(

@@ -9,11 +9,7 @@
         <form id="otpLoginForm" class="otp-form">
             <!-- Phone Input Section -->
             <div id="phoneSection" class="form-section active">
-                <label class="input-label section-label">Enter your details to begin</label>
-
-                <div class="name-input-group">
-                    <input type="text" id="customerName" name="customer_name" class="name-input" placeholder="Enter your full name" required>
-                </div>
+                <label class="input-label section-label">Enter your phone number to begin</label>
 
                 <div class="phone-input-group">
                     <div class="phone-input-container">
@@ -111,7 +107,7 @@
 }
 
 /* Form Elements */
-.name-input-group, .phone-input-group, .otp-input-group {
+.phone-input-group, .otp-input-group {
     margin-bottom: var(--space-6);
 }
 
@@ -432,7 +428,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const phoneSection = document.getElementById('phoneSection');
     const otpSection = document.getElementById('otpSection');
     const otpForm = document.getElementById('otpLoginForm');
-    const nameInput = document.getElementById('customerName');
     const phoneInput = document.getElementById('phoneNumber');
     const otpInputs = document.querySelectorAll('.otp-digit');
     const sendOtpBtn = document.getElementById('sendOtpBtn');
@@ -442,7 +437,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const messageContainer = document.getElementById('messageContainer');
 
     let currentPhone = '';
-    let currentName = '';
     let timerInterval;
     let resendTimer;
 
@@ -511,14 +505,8 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
 
         if (phoneSection.classList.contains('active')) {
-            // Phone number and name submission
-            const customerName = nameInput.value.trim();
+            // Phone number submission
             const phoneNumber = phoneInput.value.trim();
-
-            if (!customerName) {
-                showMessage('Please enter your name', 'error');
-                return;
-            }
 
             if (!phoneNumber) {
                 showMessage('Please enter your phone number', 'error');
@@ -530,7 +518,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            await sendOtp(phoneNumber, customerName);
+            await sendOtp(phoneNumber);
         }
     });
 
@@ -550,11 +538,11 @@ document.addEventListener('DOMContentLoaded', function() {
             // Hide resend section immediately when clicked
             const resendSection = document.getElementById('resendSection');
             resendSection.style.visibility = 'hidden';
-            sendOtp(currentPhone, currentName);
+            sendOtp(currentPhone);
         }
     });
 
-    async function sendOtp(phoneNumber, customerName) {
+    async function sendOtp(phoneNumber) {
         showLoading(true);
         sendOtpBtn.disabled = true;
 
@@ -565,8 +553,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    phone_number: phoneNumber,
-                    customer_name: customerName
+                    phone_number: phoneNumber
                 })
             });
 
@@ -574,7 +561,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (data.success) {
                 currentPhone = phoneNumber;
-                currentName = customerName;
                 switchToOtpSection();
                 startTimer();
             } else {
@@ -601,8 +587,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({
                     phone_number: currentPhone,
-                    otp_code: otpCode,
-                    customer_name: currentName
+                    otp_code: otpCode
                 })
             });
 
@@ -612,8 +597,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 showMessage('OTP verified successfully! Redirecting...', 'success');
                 setTimeout(() => {
-                    // Pass phone number as URL parameter to avoid session issues
-                    window.location.href = `/dashboard?phone=${encodeURIComponent(currentPhone)}`;
+                    if (data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                    } else {
+                        // Fallback to dashboard
+                        window.location.href = `/dashboard?phone=${encodeURIComponent(currentPhone)}`;
+                    }
                 }, 1500);
             } else {
                 showMessage(data.message, 'error');
@@ -688,8 +677,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     }
 
-    // Auto-focus name input
-    nameInput.focus();
+    // Auto-focus phone input
+    phoneInput.focus();
 });
 </script>
 {% endblock %}

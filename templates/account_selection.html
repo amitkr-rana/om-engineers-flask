@@ -1,0 +1,409 @@
+{% extends "base.html" %}
+
+{% block title %}Select Account - {{ config.APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="account-selection-fullscreen">
+    <div class="selection-container">
+        <div class="selection-header">
+            <h2 class="selection-title">We found multiple accounts</h2>
+            <p class="selection-subtitle">Please select the account you'd like to log in with.</p>
+        </div>
+
+        <form id="accountForm" class="account-form">
+            <div class="accounts-list">
+                {% for customer in customers %}
+                <div class="account-option">
+                    <input type="radio" id="account_{{ customer.id }}" name="selected_account" value="{{ customer.id }}" class="account-radio" {% if loop.first %}checked{% endif %}>
+                    <label for="account_{{ customer.id }}" class="account-label">
+                        <div class="account-info">
+                            <div class="account-avatar">
+                                {{ customer.name[0].upper() if customer.name else 'U' }}
+                            </div>
+                            <div class="account-details">
+                                <div class="account-name">{{ customer.name }}</div>
+                                <div class="account-email">{{ customer.email if customer.email else 'No email provided' }}</div>
+                            </div>
+                        </div>
+                        <div class="account-check">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fill="currentColor"/>
+                            </svg>
+                        </div>
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+
+            <button type="submit" id="continueBtn" class="continue-btn">Select Account & Continue</button>
+        </form>
+    </div>
+
+    <!-- Loading overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Messages -->
+    <div id="messageContainer" class="message-container"></div>
+</div>
+{% endblock %}
+
+{% block head %}
+<style>
+/* Account Selection - Mobile-First Design */
+.account-selection-fullscreen {
+    min-height: calc(100vh - var(--header-height));
+    min-height: calc(100dvh - var(--header-height));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4);
+    background: var(--gray-50);
+}
+
+.selection-container {
+    width: 100%;
+    max-width: 400px;
+    background: var(--white);
+    border-radius: var(--border-radius-xl);
+    padding: var(--space-8);
+    box-shadow: var(--shadow-lg);
+}
+
+.selection-header {
+    text-align: center;
+    margin-bottom: var(--space-8);
+}
+
+.selection-title {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--gray-900);
+    margin-bottom: var(--space-2);
+}
+
+.selection-subtitle {
+    font-size: var(--font-size-base);
+    color: var(--gray-600);
+    line-height: 1.5;
+}
+
+.account-form {
+    width: 100%;
+}
+
+.accounts-list {
+    margin-bottom: var(--space-6);
+}
+
+.account-option {
+    margin-bottom: var(--space-3);
+}
+
+.account-option:last-child {
+    margin-bottom: 0;
+}
+
+.account-radio {
+    display: none;
+}
+
+.account-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4);
+    border: 2px solid var(--gray-200);
+    border-radius: var(--border-radius-lg);
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--white);
+}
+
+.account-label:hover {
+    border-color: var(--primary-color);
+    background: rgba(59, 130, 246, 0.02);
+}
+
+.account-radio:checked + .account-label {
+    border-color: var(--primary-color);
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.account-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.account-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    flex-shrink: 0;
+}
+
+.account-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.account-name {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--gray-900);
+    margin-bottom: var(--space-1);
+}
+
+.account-email {
+    font-size: var(--font-size-sm);
+    color: var(--gray-600);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.account-check {
+    width: 20px;
+    height: 20px;
+    color: var(--primary-color);
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.account-radio:checked + .account-label .account-check {
+    opacity: 1;
+}
+
+.continue-btn {
+    width: 100%;
+    background: var(--primary-color);
+    color: var(--white);
+    border: none;
+    border-radius: var(--border-radius-lg);
+    padding: var(--space-4);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: var(--space-4);
+}
+
+.continue-btn:hover:not(:disabled) {
+    background: #2563EB;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.continue-btn:disabled {
+    background: var(--gray-300);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Loading and Messages */
+.loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.loading-overlay.active {
+    display: flex;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top: 4px solid var(--white);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.message-container {
+    position: fixed;
+    top: calc(var(--header-height) + var(--space-4));
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1001;
+    max-width: 400px;
+    width: 90%;
+}
+
+.message {
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--border-radius-lg);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: var(--space-2);
+    animation: slideDown 0.3s ease-in-out;
+    box-shadow: var(--shadow-lg);
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.message.success {
+    background: var(--success-color);
+    color: var(--white);
+}
+
+.message.error {
+    background: var(--error-color);
+    color: var(--white);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 480px) {
+    .account-selection-fullscreen {
+        padding: var(--space-2);
+    }
+
+    .selection-container {
+        padding: var(--space-6);
+        border-radius: var(--border-radius-lg);
+    }
+
+    .selection-title {
+        font-size: var(--font-size-xl);
+    }
+
+    .account-label {
+        padding: var(--space-3);
+        border-radius: var(--border-radius);
+    }
+
+    .account-avatar {
+        width: 40px;
+        height: 40px;
+        font-size: var(--font-size-base);
+    }
+
+    .continue-btn {
+        border-radius: var(--border-radius);
+    }
+}
+
+@media (max-height: 600px) {
+    .account-selection-fullscreen {
+        align-items: flex-start;
+        padding-top: var(--space-8);
+    }
+
+    .selection-header {
+        margin-bottom: var(--space-6);
+    }
+
+    .accounts-list {
+        margin-bottom: var(--space-4);
+    }
+
+    .account-option {
+        margin-bottom: var(--space-2);
+    }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const accountForm = document.getElementById('accountForm');
+    const continueBtn = document.getElementById('continueBtn');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const messageContainer = document.getElementById('messageContainer');
+
+    // Form submission
+    accountForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const selectedAccount = document.querySelector('input[name="selected_account"]:checked');
+
+        if (!selectedAccount) {
+            showMessage('Please select an account', 'error');
+            return;
+        }
+
+        await selectAccount(selectedAccount.value);
+    });
+
+    async function selectAccount(customerId) {
+        showLoading(true);
+        continueBtn.disabled = true;
+
+        try {
+            const response = await fetch('/account-selection', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    customer_id: customerId
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showMessage('Account selected successfully! Redirecting...', 'success');
+                setTimeout(() => {
+                    window.location.href = data.redirect_url || '/dashboard';
+                }, 1500);
+            } else {
+                showMessage(data.message || 'Failed to select account', 'error');
+                continueBtn.disabled = false;
+            }
+        } catch (error) {
+            showMessage('Network error. Please try again.', 'error');
+            continueBtn.disabled = false;
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    function showLoading(show) {
+        if (show) {
+            loadingOverlay.classList.add('active');
+        } else {
+            loadingOverlay.classList.remove('active');
+        }
+    }
+
+    function showMessage(message, type = 'info') {
+        const messageEl = document.createElement('div');
+        messageEl.className = `message ${type}`;
+        messageEl.textContent = message;
+
+        messageContainer.appendChild(messageEl);
+
+        setTimeout(() => {
+            messageEl.remove();
+        }, 5000);
+    }
+});
+</script>
+{% endblock %}
