@@ -13,8 +13,10 @@
                     <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50' viewBox='0 0 50 50'%3E%3Ccircle cx='25' cy='25' r='25' fill='%23ffffff'/%3E%3Cpath d='M25 25c4.602 0 8.333-3.731 8.333-8.333S29.602 8.334 25 8.334s-8.333 3.731-8.333 8.333S20.398 25 25 25zm0 4.167c-5.753 0-10.417 4.664-10.417 10.416h20.834c0-5.752-4.664-10.416-10.417-10.416z' fill='%233b82f6'/%3E%3C/svg%3E" alt="Profile Avatar" class="avatar-image">
                 </div>
                 <div class="welcome-text">
-                    <p class="welcome-back">Welcome back,</p>
-                    <h1 class="customer-name">{{ customer_name.split()[0] if customer_name and customer_name.split() else customer_name }}!</h1>
+                    <h1 class="customer-name">Welcome {{ customer_name.split()[0] if customer_name and customer_name.split() else customer_name }}!</h1>
+                    {% if customer and customer.email %}
+                    <p class="customer-email">{{ customer.email }}</p>
+                    {% endif %}
                 </div>
                 <div class="notification-icon">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -144,17 +146,18 @@
     flex: 1;
 }
 
-.welcome-back {
-    color: rgba(255, 255, 255, 0.8);
-    font-size: var(--font-size-base);
-    margin: 0 0 var(--space-1) 0;
-}
-
 .customer-name {
     color: white;
     font-size: var(--font-size-2xl);
     font-weight: var(--font-weight-bold);
     margin: 0;
+}
+
+.customer-email {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-normal);
+    margin: var(--space-1) 0 0 0;
 }
 
 .notification-icon {
@@ -354,6 +357,10 @@
 
     .customer-name {
         font-size: var(--font-size-xl);
+    }
+
+    .customer-email {
+        font-size: var(--font-size-xs);
     }
 
     .dashboard-body {
