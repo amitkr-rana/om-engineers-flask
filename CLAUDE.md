@@ -1,2 +1,4 @@
 - all pages should be single page [no scroll unless absolutely necessary] and should get auto adjusted to height and width of the mobile device
-- always use database for authentication, no use of session
+- always use database for authentication
+- pass authentication token redirect url's otherwise pages get logged out without auth token
+- No use of browser sessions/cookies/localStorage since I am using iFrame1

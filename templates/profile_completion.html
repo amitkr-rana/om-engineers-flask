@@ -301,6 +301,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const loadingOverlay = document.getElementById('loadingOverlay');
     const messageContainer = document.getElementById('messageContainer');
 
+    // Check if token is still valid on page load
+    checkTokenValidity();
+
     // Auto-focus first input
     document.getElementById('fullName').focus();
 
@@ -509,6 +512,46 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
             messageEl.remove();
         }, 5000);
+    }
+
+    // Check if current token is still valid
+    async function checkTokenValidity() {
+        try {
+            // Get token from URL parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            const authKey = urlParams.get('auth_key');
+
+            if (!token && !authKey) {
+                // No authentication parameters, redirect to login
+                window.location.href = '/get-started';
+                return;
+            }
+
+            // Make API call to test authentication
+            const headers = {};
+            if (token) {
+                headers['Authorization'] = 'Bearer ' + token;
+                headers['X-Auth-Token'] = token;
+            }
+            if (authKey) {
+                headers['X-Auth-Key'] = authKey;
+            }
+
+            const response = await fetch('/api/otp/test-auth', { headers });
+            const result = await response.json();
+
+            if (!result.success) {
+                // Token is invalid, redirect to login
+                console.log('Token validation failed:', result.message);
+                window.location.href = '/get-started';
+                return;
+            }
+        } catch (error) {
+            console.log('Token validation error:', error);
+            // On error, redirect to login
+            window.location.href = '/get-started';
+        }
     }
 });
 </script>

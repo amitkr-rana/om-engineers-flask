@@ -345,6 +345,9 @@
 <!-- Inject logout button into header on mobile -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Check if token is still valid on page load
+    checkTokenValidity();
+
     // Add logout button on all devices for dashboard
     const navContainer = document.querySelector('.nav-container');
     if (navContainer) {
@@ -366,20 +369,26 @@ document.addEventListener('DOMContentLoaded', function() {
 // Logout function for token-based authentication
 async function handleLogout() {
     try {
-        // Try to call logout API (if user has auth token in localStorage)
-        const token = localStorage.getItem('om_engineers_token');
+        // Get token from URL parameters (not localStorage for iframe compatibility)
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const authKey = urlParams.get('auth_key');
+
+        // Try to call logout API with available authentication
+        const headers = {};
         if (token) {
+            headers['Authorization'] = 'Bearer ' + token;
+            headers['X-Auth-Token'] = token;
+        }
+        if (authKey) {
+            headers['X-Auth-Key'] = authKey;
+        }
+
+        if (token || authKey) {
             await fetch('/api/otp/logout', {
                 method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + token,
-                    'X-Auth-Token': token
-                }
+                headers: headers
             });
-            // Clear localStorage
-            localStorage.removeItem('om_engineers_token');
-            localStorage.removeItem('om_engineers_customer');
-            localStorage.removeItem('om_engineers_auth_key');
         }
     } catch (error) {
         console.log('Logout API call failed, but proceeding with logout');
@@ -387,6 +396,46 @@ async function handleLogout() {
 
     // Always redirect to home page
     window.location.href = '/';
+}
+
+// Check if current token is still valid
+async function checkTokenValidity() {
+    try {
+        // Get token from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const authKey = urlParams.get('auth_key');
+
+        if (!token && !authKey) {
+            // No authentication parameters, redirect to login
+            window.location.href = '/get-started';
+            return;
+        }
+
+        // Make API call to test authentication
+        const headers = {};
+        if (token) {
+            headers['Authorization'] = 'Bearer ' + token;
+            headers['X-Auth-Token'] = token;
+        }
+        if (authKey) {
+            headers['X-Auth-Key'] = authKey;
+        }
+
+        const response = await fetch('/api/otp/test-auth', { headers });
+        const result = await response.json();
+
+        if (!result.success) {
+            // Token is invalid, redirect to login
+            console.log('Token validation failed:', result.message);
+            window.location.href = '/get-started';
+            return;
+        }
+    } catch (error) {
+        console.log('Token validation error:', error);
+        // On error, redirect to login
+        window.location.href = '/get-started';
+    }
 }
 
 // No resize handler needed - logout button stays on all screen sizes
