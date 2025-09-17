@@ -7,10 +7,8 @@
     <h1>Dashboard</h1>
     <div style="display: flex; gap: var(--space-4);">
         <button onclick="refreshStats()" class="btn btn-secondary btn-sm">🔄 Refresh</button>
-        <form method="POST" action="{{ url_for('admin.reset_database') }}" style="display: inline;"
-              onsubmit="return confirm('Are you sure you want to reset the entire database? This action cannot be undone!')">
-            <button type="submit" class="btn btn-danger btn-sm">🗑️ Reset Database</button>
-        </form>
+        <button onclick="showDatabaseInfo()" class="btn btn-secondary btn-sm">📊 DB Info</button>
+        <button onclick="showResetModal()" class="btn btn-danger btn-sm">🗑️ Reset Database</button>
     </div>
 </div>
 
@@ -151,6 +149,52 @@
         </div>
     </div>
 </div>
+
+<!-- Database Info Modal -->
+<div id="dbInfoModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--white); padding: var(--space-8); border-radius: var(--border-radius-lg); max-width: 500px; width: 90%;">
+        <h3 style="margin-bottom: var(--space-4);">📊 Database Information</h3>
+        <div id="dbInfoContent" style="margin-bottom: var(--space-6);">
+            <p>Loading database information...</p>
+        </div>
+        <button onclick="closeDatabaseInfo()" class="btn btn-secondary">Close</button>
+    </div>
+</div>
+
+<!-- Database Reset Confirmation Modal -->
+<div id="resetModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--white); padding: var(--space-8); border-radius: var(--border-radius-lg); max-width: 500px; width: 90%;">
+        <h3 style="color: var(--error-color); margin-bottom: var(--space-4);">⚠️ Database Reset Confirmation</h3>
+
+        <div style="background: var(--error-color); color: var(--white); padding: var(--space-4); border-radius: var(--border-radius-md); margin-bottom: var(--space-6);">
+            <strong>WARNING:</strong> This action will permanently delete all data including:
+            <ul style="margin: var(--space-2) 0; padding-left: var(--space-4);">
+                <li>All customer records</li>
+                <li>All service definitions</li>
+                <li>All appointments</li>
+                <li>All OTP records</li>
+            </ul>
+            This action cannot be undone!
+        </div>
+
+        <form method="POST" action="{{ url_for('admin.reset_database') }}" id="resetForm">
+            <div style="margin-bottom: var(--space-4);">
+                <label for="confirmationInput" style="display: block; margin-bottom: var(--space-2); font-weight: 500;">
+                    To confirm, type <strong>RESET</strong> in the box below:
+                </label>
+                <input type="text" id="confirmationInput" name="confirmation"
+                       style="width: 100%; padding: var(--space-3); border: 1px solid var(--gray-300); border-radius: var(--border-radius-md);"
+                       placeholder="Type RESET to confirm"
+                       autocomplete="off">
+            </div>
+
+            <div style="display: flex; gap: var(--space-4); justify-content: flex-end;">
+                <button type="button" onclick="closeResetModal()" class="btn btn-secondary">Cancel</button>
+                <button type="submit" class="btn btn-danger" id="confirmResetBtn" disabled>🗑️ Reset Database</button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -168,6 +212,80 @@ function refreshStats() {
             console.error('Error fetching stats:', error);
         });
 }
+
+// Database Info Modal Functions
+function showDatabaseInfo() {
+    document.getElementById('dbInfoModal').style.display = 'block';
+    document.getElementById('dbInfoContent').innerHTML = '<p>Loading database information...</p>';
+
+    fetch('{{ url_for("admin.database_info") }}')
+        .then(response => response.json())
+        .then(data => {
+            let content = `
+                <div style="display: grid; gap: var(--space-3);">
+                    <div><strong>File Status:</strong> ${data.file_exists ? '✅ Exists' : '❌ Missing'}</div>
+                    <div><strong>File Size:</strong> ${data.file_size}</div>
+                    <div><strong>Last Modified:</strong> ${data.last_modified}</div>
+                </div>
+                <h4 style="margin: var(--space-4) 0 var(--space-2) 0;">Table Records:</h4>
+                <div style="display: grid; gap: var(--space-2);">
+            `;
+
+            if (data.tables.error) {
+                content += `<div style="color: var(--error-color);">${data.tables.error}</div>`;
+            } else {
+                content += `
+                    <div>👥 Customers: ${data.tables.customers}</div>
+                    <div>🔧 Services: ${data.tables.services}</div>
+                    <div>📅 Appointments: ${data.tables.appointments}</div>
+                    <div>🔐 OTP Records: ${data.tables.otp_records}</div>
+                `;
+            }
+
+            content += '</div>';
+            document.getElementById('dbInfoContent').innerHTML = content;
+        })
+        .catch(error => {
+            document.getElementById('dbInfoContent').innerHTML =
+                `<div style="color: var(--error-color);">Error loading database info: ${error.message}</div>`;
+        });
+}
+
+function closeDatabaseInfo() {
+    document.getElementById('dbInfoModal').style.display = 'none';
+}
+
+// Database Reset Modal Functions
+function showResetModal() {
+    document.getElementById('resetModal').style.display = 'block';
+    document.getElementById('confirmationInput').value = '';
+    document.getElementById('confirmResetBtn').disabled = true;
+}
+
+function closeResetModal() {
+    document.getElementById('resetModal').style.display = 'none';
+}
+
+// Enable/disable reset button based on confirmation text
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmationInput = document.getElementById('confirmationInput');
+    const confirmResetBtn = document.getElementById('confirmResetBtn');
+
+    if (confirmationInput) {
+        confirmationInput.addEventListener('input', function() {
+            confirmResetBtn.disabled = this.value.trim().toUpperCase() !== 'RESET';
+        });
+    }
+
+    // Close modals when clicking outside
+    document.getElementById('dbInfoModal').addEventListener('click', function(e) {
+        if (e.target === this) closeDatabaseInfo();
+    });
+
+    document.getElementById('resetModal').addEventListener('click', function(e) {
+        if (e.target === this) closeResetModal();
+    });
+});
 
 // Auto-refresh stats every 30 seconds
 setInterval(refreshStats, 30000);

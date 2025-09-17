@@ -1,11 +1,17 @@
 import os
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths
 BASE_DIR = Path(__file__).resolve().parent
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'om-engineers-secret-key-2024'
+
+    # Session configuration
+    PERMANENT_SESSION_LIFETIME = timedelta(days=30)  # Session lasts 30 days
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
 
     # Database configuration
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or f'sqlite:///{BASE_DIR / "om_engineers.db"}'

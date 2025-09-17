@@ -256,6 +256,12 @@ def dashboard():
     customer = None
     customer_phone = ''
 
+    # Check if user needs to complete authentication
+    if 'phone_number' in session and 'customer_id' not in session:
+        # User has pending phone verification but no customer_id - redirect to profile completion
+        flash('Please complete your profile to access the dashboard.', 'info')
+        return redirect(url_for('main.profile_completion'))
+
     # Priority 1: Use customer_id from session (after account selection)
     customer_id = session.get('customer_id')
     if customer_id:
@@ -264,6 +270,10 @@ def dashboard():
             if customer:
                 customer_name = customer.name
                 customer_phone = customer.phone
+                # Ensure session has all required data
+                session['customer_name'] = customer.name
+                session['customer_phone'] = customer.phone
+                session.permanent = True
         except Exception as e:
             pass
 
@@ -278,6 +288,11 @@ def dashboard():
                 customer = Customer.get_by_phone(customer_phone)
                 if customer:
                     customer_name = customer.name
+                    # Update session with found customer data
+                    session['customer_id'] = customer.id
+                    session['customer_name'] = customer.name
+                    session['customer_phone'] = customer.phone
+                    session.permanent = True
             except Exception as e:
                 pass
 
@@ -286,6 +301,11 @@ def dashboard():
         customer_name = session.get('customer_name', 'Guest')
         if not customer_phone:
             customer_phone = session.get('customer_phone', '')
+
+        # If we have no customer data at all, redirect to login
+        if customer_name == 'Guest' and not customer_phone:
+            flash('Please log in to access your dashboard.', 'info')
+            return redirect(url_for('main.get_started'))
 
     # Fetch upcoming appointments for the customer
     upcoming_appointments = []
@@ -409,6 +429,8 @@ def profile_completion_post():
         # Store customer information in session
         session['customer_id'] = customer.id
         session['customer_phone'] = customer.phone
+        session['customer_name'] = customer.name
+        session.permanent = True  # Make session persistent
         session.pop('phone_number', None)  # Remove temporary phone number
 
         return jsonify({
@@ -485,6 +507,7 @@ def account_selection_post():
         session['customer_id'] = customer.id
         session['customer_phone'] = customer.phone
         session['customer_name'] = customer.name
+        session.permanent = True  # Make session persistent
         session.pop('phone_number', None)  # Remove temporary phone number
 
         return jsonify({

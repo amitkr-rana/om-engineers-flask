@@ -342,14 +342,72 @@ def delete_appointment(appointment_id):
 # Database utilities
 @admin_bp.route('/database/reset', methods=['POST'])
 def reset_database():
-    """Reset database (development only)"""
+    """Reset database completely - deletes all data and recreates tables with latest schema"""
     try:
-        from database import reset_database
-        reset_database()
-        flash('Database reset successfully!', 'success')
+        # Import the reset function
+        from database import reset_database as db_reset
+
+        # Get confirmation from form
+        confirmation = request.form.get('confirmation', '').strip().lower()
+        if confirmation != 'reset':
+            flash('Database reset cancelled - confirmation text was incorrect.', 'warning')
+            return redirect(url_for('admin.index'))
+
+        # Clear any active sessions that might interfere
+        db.session.close()
+
+        # Reset the database
+        db_reset()
+
+        # Log the successful reset
+        flash('✅ Database reset completed successfully! All tables have been recreated with the latest schema.', 'success')
+
     except Exception as e:
-        flash(f'Error resetting database: {str(e)}', 'error')
+        # Log detailed error for debugging
+        import traceback
+        error_detail = traceback.format_exc()
+        print(f"Database reset error: {error_detail}")
+
+        flash(f'❌ Error resetting database: {str(e)}', 'error')
+
     return redirect(url_for('admin.index'))
+
+@admin_bp.route('/database/info')
+def database_info():
+    """Get database information and statistics"""
+    try:
+        import os
+        from pathlib import Path
+
+        # Get database file info
+        db_path = Path("om_engineers.db")
+        db_exists = db_path.exists()
+        db_size = db_path.stat().st_size if db_exists else 0
+        db_modified = datetime.fromtimestamp(db_path.stat().st_mtime) if db_exists else None
+
+        # Get table counts
+        table_info = {}
+        try:
+            table_info = {
+                'customers': Customer.query.count(),
+                'services': Service.query.count(),
+                'appointments': Appointment.query.count(),
+                'otp_records': db.session.execute(db.text("SELECT COUNT(*) FROM otp")).scalar()
+            }
+        except Exception:
+            table_info = {'error': 'Could not fetch table statistics'}
+
+        info = {
+            'file_exists': db_exists,
+            'file_size': f"{db_size / 1024:.1f} KB" if db_size > 0 else "0 KB",
+            'last_modified': db_modified.strftime('%Y-%m-%d %H:%M:%S') if db_modified else 'Unknown',
+            'tables': table_info
+        }
+
+        return jsonify(info)
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @admin_bp.route('/api/stats')
 def api_stats():

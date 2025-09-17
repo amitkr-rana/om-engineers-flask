@@ -58,6 +58,7 @@ def verify_otp():
             if len(customers) == 0:
                 # Scenario 1: Phone number not in database - redirect to profile completion
                 session['phone_number'] = phone_number
+                session.permanent = True  # Make session persistent
                 return jsonify({
                     'success': True,
                     'message': 'OTP verified successfully',
@@ -69,15 +70,19 @@ def verify_otp():
                 customer = customers[0]
                 session['customer_id'] = customer.id
                 session['customer_phone'] = customer.phone
+                session['customer_name'] = customer.name
+                session.permanent = True  # Make session persistent
+                session.pop('phone_number', None)  # Remove temporary phone number
                 return jsonify({
                     'success': True,
                     'message': 'OTP verified successfully',
-                    'redirect_url': url_for('main.dashboard', phone=phone_number)
+                    'redirect_url': url_for('main.dashboard')
                 }), 200
 
             else:
                 # Scenario 2: Multiple accounts - redirect to account selection
                 session['phone_number'] = phone_number
+                session.permanent = True  # Make session persistent
                 return jsonify({
                     'success': True,
                     'message': 'OTP verified successfully',
