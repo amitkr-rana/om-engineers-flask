@@ -4,6 +4,7 @@ from .customer_auth import CustomerAuth
 from .service_db import Service
 from .appointment_db import Appointment, AppointmentStatus, AppointmentType
 from .otp import OTP
+from .notification import Notification, NotificationType
 
 # Export for easier imports
-__all__ = ['Customer', 'CustomerAuth', 'Service', 'Appointment', 'AppointmentStatus', 'AppointmentType', 'OTP']
+__all__ = ['Customer', 'CustomerAuth', 'Service', 'Appointment', 'AppointmentStatus', 'AppointmentType', 'OTP', 'Notification', 'NotificationType']

@@ -111,6 +111,38 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.notification-icon:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(1.05);
+}
+
+.notification-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    background: #ef4444;
+    color: white;
+    border-radius: 50%;
+    min-width: 18px;
+    height: 18px;
+    font-size: 11px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
 }
 
 /* White Body Section */
@@ -364,6 +396,19 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add to navigation container
         navContainer.appendChild(logoutBtn);
     }
+
+    // Initialize notifications
+    loadNotificationCount();
+
+    // Set up periodic refresh of notification count
+    setInterval(loadNotificationCount, 30000); // Check every 30 seconds
+
+    // Listen for notification updates from other windows (like notification page in iframe)
+    window.addEventListener('message', function(event) {
+        if (event.data && event.data.type === 'NOTIFICATION_UPDATE') {
+            updateNotificationBadge(event.data.unreadCount);
+        }
+    });
 });
 
 // Logout function for token-based authentication
@@ -438,6 +483,78 @@ async function checkTokenValidity() {
     }
 }
 
+// Notification functions
+async function loadNotificationCount() {
+    try {
+        const headers = getAuthHeaders();
+        const response = await fetch('/api/notifications/unread-count', { headers });
+        const data = await response.json();
+
+        if (data.success) {
+            updateNotificationBadge(data.unread_count);
+        }
+    } catch (error) {
+        console.log('Error loading notification count:', error);
+    }
+}
+
+function updateNotificationBadge(count) {
+    const badge = document.getElementById('notificationBadge');
+    if (!badge) return;
+
+    if (count > 0) {
+        badge.textContent = count > 99 ? '99+' : count.toString();
+        badge.style.display = 'flex';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+function openNotifications() {
+    // Get current auth parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const authKey = urlParams.get('auth_key');
+
+    // Construct notifications URL with auth parameters
+    let notificationsUrl = '/notifications';
+    const params = new URLSearchParams();
+
+    if (token) {
+        params.append('token', token);
+    }
+    if (authKey) {
+        params.append('auth_key', authKey);
+    }
+
+    if (params.toString()) {
+        notificationsUrl += '?' + params.toString();
+    }
+
+    window.location.href = notificationsUrl;
+}
+
+function getAuthHeaders() {
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+
+    // Get token from URL parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const authKey = urlParams.get('auth_key');
+
+    if (token) {
+        headers['Authorization'] = 'Bearer ' + token;
+        headers['X-Auth-Token'] = token;
+    }
+    if (authKey) {
+        headers['X-Auth-Key'] = authKey;
+    }
+
+    return headers;
+}
+
 // No resize handler needed - logout button stays on all screen sizes
 </script>
 
@@ -456,10 +573,11 @@ async function checkTokenValidity() {
                     <p class="customer-email">{{ customer.email }}</p>
                     {% endif %}
                 </div>
-                <div class="notification-icon">
+                <div class="notification-icon" id="notificationIcon" onclick="openNotifications()">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" fill="white"/>
                     </svg>
+                    <div id="notificationBadge" class="notification-badge" style="display: none;">0</div>
                 </div>
             </div>
         </div>

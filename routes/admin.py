@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from datetime import datetime, date, time
-from models import Customer, Service, Appointment, AppointmentStatus, AppointmentType
+from models import Customer, Service, Appointment, AppointmentStatus, AppointmentType, Notification, NotificationType
 from database import db
 import traceback
 
@@ -309,15 +309,68 @@ def update_appointment(appointment_id):
     """Update appointment"""
     try:
         appointment = Appointment.query.get_or_404(appointment_id)
+        old_status = appointment.status
+
         appointment.customer_id = int(request.form['customer_id'])
         appointment.service_id = int(request.form['service_id'])
         appointment.appointment_date = datetime.strptime(request.form['appointment_date'], '%Y-%m-%d').date()
         appointment.appointment_time = datetime.strptime(request.form['appointment_time'], '%H:%M').time()
         appointment.appointment_type = AppointmentType(request.form['appointment_type'])
-        appointment.status = AppointmentStatus(request.form['status'])
+        new_status = AppointmentStatus(request.form['status'])
+        appointment.status = new_status
         appointment.notes = request.form.get('notes', '')
         appointment.address = request.form.get('address', '')
         appointment.updated_at = datetime.utcnow()
+
+        # Create notification if status changed
+        if old_status != new_status:
+            service = Service.query.get(appointment.service_id)
+            service_name = service.name if service else "Service"
+
+            # Map status to notification type and create appropriate message
+            if new_status == AppointmentStatus.CONFIRMED:
+                notification_type = NotificationType.APPOINTMENT_CONFIRMED.value
+                title = "Appointment Confirmed"
+                message = f"Your {service_name} appointment scheduled for {appointment.appointment_date} at {appointment.appointment_time} has been confirmed."
+                action_text = "View Appointment"
+                action_url = f"/dashboard"
+            elif new_status == AppointmentStatus.COMPLETED:
+                notification_type = NotificationType.SERVICE_COMPLETED.value
+                title = "Service Completed"
+                message = f"Your {service_name} service has been completed successfully."
+                action_text = "View Details"
+                action_url = f"/dashboard"
+            elif new_status == AppointmentStatus.CANCELLED:
+                notification_type = NotificationType.SERVICE_CANCELLED.value
+                title = "Appointment Cancelled"
+                message = f"Your {service_name} appointment scheduled for {appointment.appointment_date} has been cancelled."
+                action_text = "Book New Appointment"
+                action_url = f"/book-service"
+            elif new_status == AppointmentStatus.PENDING:
+                notification_type = NotificationType.SERVICE_SCHEDULED.value
+                title = "Service Scheduled"
+                message = f"Your {service_name} service has been scheduled for {appointment.appointment_date} at {appointment.appointment_time}."
+                action_text = "View Details"
+                action_url = f"/dashboard"
+            else:
+                # For IN_PROGRESS or other statuses
+                notification_type = NotificationType.SYSTEM_UPDATE.value
+                title = "Appointment Status Updated"
+                message = f"Your {service_name} appointment status has been updated to {new_status.value.replace('_', ' ').title()}."
+                action_text = "View Details"
+                action_url = f"/dashboard"
+
+            # Create the notification
+            Notification.create_notification(
+                customer_id=appointment.customer_id,
+                appointment_id=appointment.id,
+                notification_type=notification_type,
+                title=title,
+                message=message,
+                action_text=action_text,
+                action_url=action_url
+            )
+
         db.session.commit()
         flash('Appointment updated successfully!', 'success')
         return redirect(url_for('admin.appointments'))

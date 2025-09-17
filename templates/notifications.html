@@ -1,0 +1,477 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications - {{ config.APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="notifications-page">
+    <!-- Content Area -->
+    <div class="notifications-content">
+        <!-- Header with Back Button and Title -->
+        <div class="page-header">
+            <button onclick="goBackToDashboard()" class="back-btn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <h1 class="page-title">Notifications</h1>
+            {% if unread_count > 0 %}
+            <button id="markAllReadBtn" class="mark-all-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M5 13L9 17L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            {% else %}
+            <div style="width: 20px;"></div>
+            {% endif %}
+        </div>
+
+        <!-- Notifications List -->
+        <div class="notifications-list">
+            {% if notifications %}
+                {% for notification in notifications %}
+                <div class="notification-card{% if not notification.is_read %} unread{% endif %}"
+                     data-notification-id="{{ notification.id }}"
+                     onclick="handleNotificationClick('{{ notification.action_url }}', {{ notification.id }})">
+
+                    <div class="notification-main">
+                        <div class="notification-details">
+                            <p class="notification-message">{{ notification.message }}</p>
+
+                            {% if notification.action_text and notification.action_url %}
+                            <div class="notification-action">
+                                <span class="action-link">{{ notification.action_text }}</span>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        {% if not notification.is_read %}
+                        <div class="unread-dot"></div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18 8A6 6 0 0 0 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" stroke="#9CA3AF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M13.73 21A2 2 0 0 1 9.27 21" stroke="#9CA3AF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h3 class="empty-title">No notifications yet</h3>
+                    <p class="empty-description">You'll see updates about your appointments and services here.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block head %}
+<style>
+/* Notifications Page - Matching Design */
+.notifications-page {
+    min-height: calc(100vh - var(--header-height));
+    min-height: calc(100dvh - var(--header-height));
+    background: #f8f9fa;
+    display: flex;
+    flex-direction: column;
+}
+
+.notifications-content {
+    flex: 1;
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* Header */
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4) var(--space-4);
+    background: white;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.back-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: transparent;
+    color: #6c757d;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.back-btn:hover {
+    background: #f8f9fa;
+}
+
+.page-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #212529;
+    margin: 0;
+}
+
+.mark-all-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: #007bff;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.mark-all-btn:hover {
+    background: #0056b3;
+}
+
+/* Notifications List */
+.notifications-list {
+    padding: var(--space-2) 0;
+}
+
+.notification-card {
+    background: white;
+    margin: 0 var(--space-4) var(--space-2);
+    border-radius: 12px;
+    padding: var(--space-4);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.notification-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.notification-card.unread {
+    border-left: 4px solid #007bff;
+}
+
+.notification-main {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.notification-details {
+    flex: 1;
+}
+
+.notification-message {
+    font-size: 14px;
+    color: #495057;
+    line-height: 1.5;
+    margin: 0 0 var(--space-2) 0;
+}
+
+.notification-action {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    margin-top: var(--space-2);
+}
+
+.action-link {
+    font-size: 14px;
+    color: #007bff;
+    font-weight: 500;
+}
+
+.unread-dot {
+    width: 8px;
+    height: 8px;
+    background: #007bff;
+    border-radius: 50%;
+    margin-left: var(--space-2);
+    margin-top: 4px;
+    flex-shrink: 0;
+}
+
+/* Empty State */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--space-12) var(--space-4);
+}
+
+.empty-icon {
+    margin-bottom: var(--space-4);
+    opacity: 0.5;
+}
+
+.empty-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #495057;
+    margin: 0 0 var(--space-2);
+}
+
+.empty-description {
+    font-size: 14px;
+    color: #6c757d;
+    line-height: 1.5;
+    margin: 0;
+    max-width: 280px;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 480px) {
+    .page-header {
+        padding: var(--space-3);
+    }
+
+    .page-title {
+        font-size: 16px;
+    }
+
+    .notification-card {
+        margin: 0 var(--space-3) var(--space-2);
+        padding: var(--space-3);
+    }
+
+    .notification-message {
+        font-size: 13px;
+    }
+
+    .action-link {
+        font-size: 13px;
+    }
+}
+
+/* Toast Messages */
+.toast-message {
+    position: fixed;
+    top: calc(var(--header-height) + 60px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #28a745;
+    color: white;
+    padding: var(--space-3) var(--space-4);
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    animation: slideDown 0.3s ease-out;
+}
+
+.toast-message.error {
+    background: #dc3545;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const markAllReadBtn = document.getElementById('markAllReadBtn');
+
+    // Mark all notifications as read
+    if (markAllReadBtn) {
+        markAllReadBtn.addEventListener('click', async function() {
+            try {
+                const headers = getAuthHeaders();
+                const response = await fetch('/api/notifications/mark-all-read', {
+                    method: 'POST',
+                    headers: headers
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Remove unread styling from all notifications
+                    document.querySelectorAll('.notification-card.unread').forEach(item => {
+                        item.classList.remove('unread');
+                        const dot = item.querySelector('.unread-dot');
+                        if (dot) {
+                            dot.remove();
+                        }
+                    });
+
+                    // Hide the mark all read button
+                    markAllReadBtn.style.display = 'none';
+
+                    // Show success message
+                    showToast('All notifications marked as read');
+
+                    // Update badge count on dashboard (if parent window exists for iframe)
+                    if (window.parent && window.parent !== window) {
+                        try {
+                            window.parent.postMessage({
+                                type: 'NOTIFICATION_UPDATE',
+                                unreadCount: 0
+                            }, '*');
+                        } catch (e) {
+                            // Fail silently if cross-origin
+                        }
+                    }
+                } else {
+                    showToast('Failed to mark notifications as read', 'error');
+                }
+            } catch (error) {
+                console.error('Error marking all notifications as read:', error);
+                showToast('Network error. Please try again.', 'error');
+            }
+        });
+    }
+});
+
+// Go back to dashboard
+function goBackToDashboard() {
+    // Include current auth parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const authKey = urlParams.get('auth_key');
+
+    let dashboardUrl = '/dashboard';
+    const params = new URLSearchParams();
+
+    if (token) {
+        params.append('token', token);
+    }
+    if (authKey) {
+        params.append('auth_key', authKey);
+    }
+
+    if (params.toString()) {
+        dashboardUrl += '?' + params.toString();
+    }
+
+    window.location.href = dashboardUrl;
+}
+
+// Handle notification click
+function handleNotificationClick(actionUrl, notificationId) {
+    // Mark notification as read first
+    markNotificationAsRead(notificationId);
+
+    // Navigate to the action URL
+    if (actionUrl) {
+        // Include current auth parameters in the new URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const authKey = urlParams.get('auth_key');
+
+        let finalUrl = actionUrl;
+        if (token) {
+            finalUrl += (actionUrl.includes('?') ? '&' : '?') + 'token=' + token;
+        }
+        if (authKey) {
+            finalUrl += (finalUrl.includes('?') ? '&' : '?') + 'auth_key=' + authKey;
+        }
+
+        window.location.href = finalUrl;
+    }
+}
+
+// Mark single notification as read
+async function markNotificationAsRead(notificationId) {
+    try {
+        const headers = getAuthHeaders();
+        const response = await fetch(`/api/notifications/${notificationId}/mark-read`, {
+            method: 'POST',
+            headers: headers
+        });
+
+        if (response.ok) {
+            // Update UI
+            const notificationItem = document.querySelector(`[data-notification-id="${notificationId}"]`);
+            if (notificationItem && notificationItem.classList.contains('unread')) {
+                notificationItem.classList.remove('unread');
+                const dot = notificationItem.querySelector('.unread-dot');
+                if (dot) {
+                    dot.remove();
+                }
+            }
+
+            // Update badge count on dashboard (if parent window exists for iframe)
+            if (window.parent && window.parent !== window) {
+                try {
+                    // Get current unread count
+                    const unreadItems = document.querySelectorAll('.notification-card.unread').length;
+                    window.parent.postMessage({
+                        type: 'NOTIFICATION_UPDATE',
+                        unreadCount: unreadItems
+                    }, '*');
+                } catch (e) {
+                    // Fail silently if cross-origin
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error marking notification as read:', error);
+    }
+}
+
+// Get auth headers for API requests
+function getAuthHeaders() {
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+
+    // Try to get token from URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const authKey = urlParams.get('auth_key');
+
+    if (token) {
+        headers['Authorization'] = 'Bearer ' + token;
+        headers['X-Auth-Token'] = token;
+    }
+    if (authKey) {
+        headers['X-Auth-Key'] = authKey;
+    }
+
+    return headers;
+}
+
+// Show toast message
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = 'toast-message';
+    if (type === 'error') {
+        toast.classList.add('error');
+    }
+    toast.textContent = message;
+
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+</script>
+{% endblock %}

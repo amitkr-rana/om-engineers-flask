@@ -1,6 +1,8 @@
 - all pages should be single page [no scroll unless absolutely necessary] and should get auto adjusted to height and width of the mobile device
+- header and footer should remain same across all pages, just body of the new pages should change as per provided image/instructions
 - always use database for authentication
 - pass authentication token redirect url's otherwise pages get logged out without auth token
 - No use of browser sessions/cookies/localStorage since I am using iFrames
 - Use 9123187562 and 123456 OTP for testing purposes
+- Hamburger menu should not be added to header for any new page
 - After each change verify these against the MD file to see if requirements have been fulfilled

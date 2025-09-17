@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from datetime import datetime, date, time
-from models import Customer, Service, Appointment, AppointmentType
+from models import Customer, Service, Appointment, AppointmentType, Notification
 from services.auth_service import AuthService
 from utils.auth_decorators import require_auth, get_current_customer, get_auth_response_data
 from database import db
@@ -600,3 +600,121 @@ def utility_processor():
         format_phone=format_phone,
         current_year=datetime.now().year
     )
+
+# Notification routes
+@main_bp.route('/notifications')
+@require_auth
+def notifications():
+    """Notifications page - requires authentication"""
+    customer = get_current_customer()
+
+    if not customer:
+        return redirect(url_for('main.get_started'))
+
+    # Get notifications for the customer
+    notifications = Notification.get_customer_notifications(customer.id, limit=50)
+    unread_count = Notification.get_unread_count(customer.id)
+
+    return render_template('notifications.html',
+                         customer=customer,
+                         notifications=notifications,
+                         unread_count=unread_count)
+
+@main_bp.route('/api/notifications/unread-count')
+@require_auth
+def get_unread_notifications_count():
+    """API endpoint to get unread notifications count"""
+    customer = get_current_customer()
+
+    if not customer:
+        return jsonify({'success': False, 'message': 'Authentication required'}), 401
+
+    try:
+        unread_count = Notification.get_unread_count(customer.id)
+        return jsonify({
+            'success': True,
+            'unread_count': unread_count
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error getting notification count: {str(e)}'
+        }), 500
+
+@main_bp.route('/api/notifications/<int:notification_id>/mark-read', methods=['POST'])
+@require_auth
+def mark_notification_read(notification_id):
+    """Mark a single notification as read"""
+    customer = get_current_customer()
+
+    if not customer:
+        return jsonify({'success': False, 'message': 'Authentication required'}), 401
+
+    try:
+        notification = Notification.query.filter_by(
+            id=notification_id,
+            customer_id=customer.id
+        ).first()
+
+        if not notification:
+            return jsonify({'success': False, 'message': 'Notification not found'}), 404
+
+        notification.mark_as_read()
+
+        return jsonify({
+            'success': True,
+            'message': 'Notification marked as read'
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error marking notification as read: {str(e)}'
+        }), 500
+
+@main_bp.route('/api/notifications/mark-all-read', methods=['POST'])
+@require_auth
+def mark_all_notifications_read():
+    """Mark all notifications as read for the current customer"""
+    customer = get_current_customer()
+
+    if not customer:
+        return jsonify({'success': False, 'message': 'Authentication required'}), 401
+
+    try:
+        Notification.mark_all_as_read(customer.id)
+
+        return jsonify({
+            'success': True,
+            'message': 'All notifications marked as read'
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error marking all notifications as read: {str(e)}'
+        }), 500
+
+@main_bp.route('/api/notifications')
+@require_auth
+def get_notifications():
+    """API endpoint to get customer notifications"""
+    customer = get_current_customer()
+
+    if not customer:
+        return jsonify({'success': False, 'message': 'Authentication required'}), 401
+
+    try:
+        limit = request.args.get('limit', 50, type=int)
+        notifications = Notification.get_customer_notifications(customer.id, limit=limit)
+
+        notifications_data = [notification.to_dict() for notification in notifications]
+
+        return jsonify({
+            'success': True,
+            'notifications': notifications_data,
+            'unread_count': Notification.get_unread_count(customer.id)
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error getting notifications: {str(e)}'
+        }), 500
