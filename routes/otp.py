@@ -183,11 +183,17 @@ def get_otp_status(phone_number):
 def test_auth():
     """Test authentication - shows current customer if authenticated"""
     try:
+        print(f"Test auth request:")
+        print(f"  URL params: {request.args}")
+        print(f"  Headers: {dict(request.headers)}")
+
         customer = AuthService.get_customer_from_request(request)
+        print(f"  Customer result: {customer}")
 
         if customer:
             from models.customer_auth import CustomerAuth
             auth_record = CustomerAuth.query.filter_by(customer_id=customer.id).first()
+            print(f"  Auth record: {auth_record}")
 
             return jsonify({
                 'success': True,
@@ -203,10 +209,44 @@ def test_auth():
             }), 401
 
     except Exception as e:
+        print(f"  Test auth exception: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({
             'success': False,
             'message': f'Error: {str(e)}',
             'error_code': 'SERVER_ERROR'
+        }), 500
+
+@otp_bp.route('/debug-db')
+def debug_db():
+    """Debug database state"""
+    try:
+        from models.customer_auth import CustomerAuth
+        from models.customer_db import Customer
+
+        # Get all customers and their auth records
+        customers = Customer.query.all()
+        auth_records = CustomerAuth.query.all()
+
+        debug_info = {
+            'customers_count': len(customers),
+            'auth_records_count': len(auth_records),
+            'customers': [{'id': c.id, 'name': c.name, 'phone': c.phone} for c in customers],
+            'auth_records': [{'customer_id': a.customer_id, 'auth_key': a.auth_key, 'has_token': bool(a.auth_token)} for a in auth_records]
+        }
+
+        return jsonify({
+            'success': True,
+            'debug_info': debug_info
+        }), 200
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
         }), 500
 
 @otp_bp.route('/test')

@@ -67,11 +67,16 @@ class AuthService:
         Returns None if token is invalid or expired.
         """
         if not token:
+            print(f"  validate_token: No token provided")
             return None
 
         try:
-            return CustomerAuth.get_customer_by_auth_token(token)
-        except Exception:
+            print(f"  validate_token: Checking token: {token[:20]}...")
+            customer = CustomerAuth.get_customer_by_auth_token(token)
+            print(f"  validate_token: Customer found: {customer}")
+            return customer
+        except Exception as e:
+            print(f"  validate_token: Exception: {e}")
             return None
 
     @staticmethod
@@ -81,11 +86,16 @@ class AuthService:
         Returns None if key is invalid.
         """
         if not auth_key or len(auth_key) != 16:
+            print(f"  validate_auth_key: Invalid key format: {auth_key}")
             return None
 
         try:
-            return CustomerAuth.get_customer_by_auth_key(auth_key)
-        except Exception:
+            print(f"  validate_auth_key: Checking key: {auth_key}")
+            customer = CustomerAuth.get_customer_by_auth_key(auth_key)
+            print(f"  validate_auth_key: Customer found: {customer}")
+            return customer
+        except Exception as e:
+            print(f"  validate_auth_key: Exception: {e}")
             return None
 
     @staticmethod

@@ -597,11 +597,16 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 showMessage('OTP verified successfully! Redirecting...', 'success');
                 setTimeout(() => {
-                    if (data.redirect_url) {
-                        window.location.href = data.redirect_url;
+                    if (data.dashboard_url) {
+                        window.location.href = data.dashboard_url;
                     } else {
-                        // Fallback to dashboard
-                        window.location.href = `/dashboard?phone=${encodeURIComponent(currentPhone)}`;
+                        // Fallback to dashboard with auth key if available
+                        const authKey = data.customer && data.customer.auth_key;
+                        if (authKey) {
+                            window.location.href = `/dashboard?auth_key=${authKey}`;
+                        } else {
+                            window.location.href = `/dashboard?phone=${encodeURIComponent(currentPhone)}`;
+                        }
                     }
                 }, 1500);
             } else {

@@ -244,8 +244,14 @@ def terms():
 @main_bp.route('/dashboard')
 def dashboard():
     """User dashboard - supports authentication via token/auth_key in headers or URL parameters"""
+    # Debug: Print request parameters
+    print(f"Dashboard access attempt:")
+    print(f"  URL params: {request.args}")
+    print(f"  Headers: {dict(request.headers)}")
+
     # Try to get authenticated customer
     customer = AuthService.get_customer_from_request(request)
+    print(f"  Customer found: {customer}")
 
     if not customer:
         # If no authentication found, return JSON error for API calls or redirect for browser
