@@ -25,17 +25,17 @@ def create_app():
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(otp_bp, url_prefix='/api/otp')
 
-    # Add headers for iframe compatibility
+    # Add headers for API compatibility
     @app.after_request
     def after_request(response):
         # Allow iframe embedding (remove X-Frame-Options or set to SAMEORIGIN)
         response.headers.pop('X-Frame-Options', None)
 
-        # Set CORS headers for iframe compatibility
+        # Set CORS headers for API access
         response.headers['Access-Control-Allow-Origin'] = '*'
         response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
-        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Auth-Token, X-Auth-Key, X-Requested-With'
+        response.headers['Access-Control-Allow-Credentials'] = 'false'  # Not needed for token-based auth
 
         return response
 

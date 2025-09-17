@@ -1,7 +1,9 @@
-from flask import Blueprint, request, jsonify, render_template, flash, redirect, url_for, session
+from flask import Blueprint, request, jsonify, render_template
 from services.otp_service import OTPService
+from services.auth_service import AuthService
 from models.otp import OTP
 from models.customer_db import Customer
+from utils.auth_decorators import get_auth_response_data
 from database import db
 from datetime import datetime
 
@@ -36,7 +38,7 @@ def send_otp():
 
 @otp_bp.route('/verify', methods=['POST'])
 def verify_otp():
-    """Verify OTP code and implement three-scenario logic"""
+    """Verify OTP code and return authentication token"""
     try:
         data = request.get_json() if request.is_json else request.form
         phone_number = data.get('phone_number', '').strip()
@@ -45,82 +47,91 @@ def verify_otp():
         if not phone_number or not otp_code:
             return jsonify({
                 'success': False,
-                'message': 'Phone number and OTP code are required'
+                'message': 'Phone number and OTP code are required',
+                'error_code': 'MISSING_PARAMETERS'
             }), 400
 
         # Verify OTP
         success, message = OTPService.verify_otp(phone_number, otp_code)
 
         if success:
-            # Check for existing customers with this phone number
-            customers = Customer.get_all_by_phone(phone_number)
+            # Authenticate user after successful OTP verification
+            customer, token = AuthService.authenticate_after_otp(phone_number)
 
-            if len(customers) == 0:
-                # Scenario 1: Phone number not in database - redirect to profile completion
-                session['phone_number'] = phone_number
-                session.permanent = True  # Make session persistent
-                # Check if request is from iframe
-                is_iframe = request.headers.get('X-Frame-Options') or request.args.get('iframe')
-                redirect_url = url_for('main.profile_completion')
-                if is_iframe:
-                    redirect_url += '?iframe=1'
+            if customer and token:
+                # Return authentication data with dashboard URL
+                auth_data = get_auth_response_data(customer, token)
+                auth_data['dashboard_url'] = f"/dashboard?token={token}"
+                auth_data['dashboard_url_with_key'] = f"/dashboard?auth_key={auth_data['customer']['auth_key']}"
 
-                return jsonify({
-                    'success': True,
-                    'message': 'OTP verified successfully',
-                    'redirect_url': redirect_url,
-                    'iframe_mode': bool(is_iframe)
-                }), 200
-
-            elif len(customers) == 1:
-                # Scenario 3: Single account - redirect directly to dashboard
-                customer = customers[0]
-                session['customer_id'] = customer.id
-                session['customer_phone'] = customer.phone
-                session['customer_name'] = customer.name
-                session.permanent = True  # Make session persistent
-                session.pop('phone_number', None)  # Remove temporary phone number
-
-                # Check if request is from iframe
-                is_iframe = request.headers.get('X-Frame-Options') or request.args.get('iframe')
-                redirect_url = url_for('main.dashboard')
-                if is_iframe:
-                    redirect_url += '?iframe=1'
-
-                return jsonify({
-                    'success': True,
-                    'message': 'OTP verified successfully',
-                    'redirect_url': redirect_url,
-                    'iframe_mode': bool(is_iframe)
-                }), 200
-
+                return jsonify(auth_data), 200
             else:
-                # Scenario 2: Multiple accounts - redirect to account selection
-                session['phone_number'] = phone_number
-                session.permanent = True  # Make session persistent
-
-                # Check if request is from iframe
-                is_iframe = request.headers.get('X-Frame-Options') or request.args.get('iframe')
-                redirect_url = url_for('main.account_selection')
-                if is_iframe:
-                    redirect_url += '?iframe=1'
-
                 return jsonify({
-                    'success': True,
-                    'message': 'OTP verified successfully',
-                    'redirect_url': redirect_url,
-                    'iframe_mode': bool(is_iframe)
-                }), 200
-
-        return jsonify({
-            'success': success,
-            'message': message
-        }), 200 if success else 400
+                    'success': False,
+                    'message': token or 'Authentication failed',
+                    'error_code': 'AUTH_FAILED'
+                }), 500
+        else:
+            return jsonify({
+                'success': False,
+                'message': message,
+                'error_code': 'OTP_INVALID'
+            }), 400
 
     except Exception as e:
         return jsonify({
             'success': False,
-            'message': f'Server error: {str(e)}'
+            'message': f'Server error: {str(e)}',
+            'error_code': 'SERVER_ERROR'
+        }), 500
+
+@otp_bp.route('/refresh-token', methods=['POST'])
+def refresh_token():
+    """Refresh authentication token for a logged-in user"""
+    try:
+        # Get current customer from token
+        customer = AuthService.get_customer_from_request(request)
+
+        if not customer:
+            return jsonify({
+                'success': False,
+                'message': 'Authentication required',
+                'error_code': 'AUTH_REQUIRED'
+            }), 401
+
+        # Generate new token
+        new_token = AuthService.refresh_token(customer)
+
+        return jsonify(get_auth_response_data(customer, new_token)), 200
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Server error: {str(e)}',
+            'error_code': 'SERVER_ERROR'
+        }), 500
+
+@otp_bp.route('/logout', methods=['POST'])
+def logout():
+    """Logout user by revoking their authentication token"""
+    try:
+        # Get current customer from token
+        customer = AuthService.get_customer_from_request(request)
+
+        if customer:
+            # Revoke the token
+            AuthService.revoke_token(customer)
+
+        return jsonify({
+            'success': True,
+            'message': 'Logged out successfully'
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Server error: {str(e)}',
+            'error_code': 'SERVER_ERROR'
         }), 500
 
 @otp_bp.route('/resend', methods=['POST'])
@@ -166,6 +177,36 @@ def get_otp_status(phone_number):
         return jsonify({
             'success': False,
             'message': f'Server error: {str(e)}'
+        }), 500
+
+@otp_bp.route('/test-auth')
+def test_auth():
+    """Test authentication - shows current customer if authenticated"""
+    try:
+        customer = AuthService.get_customer_from_request(request)
+
+        if customer:
+            from models.customer_auth import CustomerAuth
+            auth_record = CustomerAuth.query.filter_by(customer_id=customer.id).first()
+
+            return jsonify({
+                'success': True,
+                'message': 'Authentication successful',
+                'customer': customer.to_dict(),
+                'auth_info': auth_record.to_dict() if auth_record else None
+            }), 200
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'Not authenticated',
+                'error_code': 'AUTH_REQUIRED'
+            }), 401
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error: {str(e)}',
+            'error_code': 'SERVER_ERROR'
         }), 500
 
 @otp_bp.route('/test')

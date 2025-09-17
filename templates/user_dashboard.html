@@ -350,14 +350,44 @@ document.addEventListener('DOMContentLoaded', function() {
     if (navContainer) {
         // Create logout button
         const logoutBtn = document.createElement('a');
-        logoutBtn.href = '{{ url_for("main.logout") }}';
+        logoutBtn.href = '#';
         logoutBtn.className = 'dashboard-logout-btn';
         logoutBtn.innerHTML = 'Logout';
+        logoutBtn.onclick = function(e) {
+            e.preventDefault();
+            handleLogout();
+        };
 
         // Add to navigation container
         navContainer.appendChild(logoutBtn);
     }
 });
+
+// Logout function for token-based authentication
+async function handleLogout() {
+    try {
+        // Try to call logout API (if user has auth token in localStorage)
+        const token = localStorage.getItem('om_engineers_token');
+        if (token) {
+            await fetch('/api/otp/logout', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'X-Auth-Token': token
+                }
+            });
+            // Clear localStorage
+            localStorage.removeItem('om_engineers_token');
+            localStorage.removeItem('om_engineers_customer');
+            localStorage.removeItem('om_engineers_auth_key');
+        }
+    } catch (error) {
+        console.log('Logout API call failed, but proceeding with logout');
+    }
+
+    // Always redirect to home page
+    window.location.href = '/';
+}
 
 // No resize handler needed - logout button stays on all screen sizes
 </script>

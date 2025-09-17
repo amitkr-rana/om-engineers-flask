@@ -17,10 +17,35 @@ def init_db(app):
 def initialize_default_data():
     """Initialize default data - currently empty to allow fresh population"""
     # Import all models to ensure proper registration
-    from models import Service, Customer, Appointment, OTP
+    from models import Service, Customer, Appointment, OTP, CustomerAuth
+
+    # Migrate existing customers to have auth records
+    migrate_existing_customers()
 
     # No default services - admin will populate via web interface
     print("Database tables created successfully! Ready for admin population.")
+
+def migrate_existing_customers():
+    """Create auth records for existing customers that don't have them"""
+    try:
+        from models import Customer, CustomerAuth
+
+        # Find customers without auth records
+        customers_without_auth = db.session.query(Customer).outerjoin(CustomerAuth).filter(CustomerAuth.customer_id == None).all()
+
+        if customers_without_auth:
+            print(f"Creating auth records for {len(customers_without_auth)} customers...")
+
+            for customer in customers_without_auth:
+                CustomerAuth.get_or_create_for_customer(customer.id)
+
+            print(f"Successfully created auth records for {len(customers_without_auth)} customers!")
+        else:
+            print("All customers already have auth records.")
+
+    except Exception as e:
+        print(f"Migration error (this is normal on first run): {e}")
+        db.session.rollback()
 
 def reset_database():
     """Reset the database - useful for development"""

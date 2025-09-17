@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication Test - Om Engineers</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .step {
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin: 15px 0;
+            background: #f8f9fa;
+        }
+        .success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+            border: none;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            margin: 10px 0;
+        }
+        .auth-info {
+            background: #e7f3ff;
+            border: 1px solid #b3d7ff;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .url-link {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            padding: 8px 15px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 5px 0;
+        }
+        .url-link:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Authentication Test Flow</h1>
+        <p>This page demonstrates the complete authentication flow from OTP verification to dashboard access.</p>
+    </div>
+
+    <!-- Step 1: Send OTP -->
+    <div class="container">
+        <h2>Step 1: Send OTP</h2>
+        <div class="step">
+            <label for="phone">Phone Number:</label>
+            <input type="tel" id="phone" placeholder="Enter your phone number" value="9123187562">
+            <button onclick="sendOTP()">Send OTP</button>
+        </div>
+        <div id="otp-result"></div>
+    </div>
+
+    <!-- Step 2: Verify OTP -->
+    <div class="container">
+        <h2>Step 2: Verify OTP</h2>
+        <div class="step">
+            <label for="otp">OTP Code:</label>
+            <input type="text" id="otp" placeholder="Enter 6-digit OTP">
+            <button onclick="verifyOTP()">Verify OTP</button>
+        </div>
+        <div id="verify-result"></div>
+    </div>
+
+    <!-- Step 3: Authentication Info -->
+    <div class="container">
+        <h2>Step 3: Authentication Information</h2>
+        <div id="auth-info" class="auth-info" style="display: none;">
+            <h3>🎉 Authentication Successful!</h3>
+            <div id="auth-details"></div>
+        </div>
+    </div>
+
+    <!-- Step 4: Test Dashboard Access -->
+    <div class="container">
+        <h2>Step 4: Test Dashboard Access</h2>
+        <div id="dashboard-links" style="display: none;">
+            <h3>Dashboard Access Options:</h3>
+            <div style="margin: 10px 0;">
+                <strong>Option 1 - Using Auth Token:</strong><br>
+                <a id="dashboard-token-link" class="url-link" target="_blank">Open Dashboard (Token)</a>
+            </div>
+            <div style="margin: 10px 0;">
+                <strong>Option 2 - Using Auth Key:</strong><br>
+                <a id="dashboard-key-link" class="url-link" target="_blank">Open Dashboard (Auth Key)</a>
+            </div>
+        </div>
+
+        <div class="step">
+            <h3>Test Authentication Status</h3>
+            <button onclick="testAuth()">Test Current Auth Status</button>
+            <div id="auth-test-result"></div>
+        </div>
+    </div>
+
+    <!-- Step 5: API Integration Examples -->
+    <div class="container">
+        <h2>Step 5: API Integration Examples</h2>
+        <div class="step">
+            <h3>For JavaScript/AJAX:</h3>
+            <div class="code-block" id="js-example"></div>
+        </div>
+        <div class="step">
+            <h3>For PHP/iframe:</h3>
+            <div class="code-block" id="php-example"></div>
+        </div>
+    </div>
+
+    <script>
+        let authData = null;
+
+        async function sendOTP() {
+            const phone = document.getElementById('phone').value;
+            const resultDiv = document.getElementById('otp-result');
+
+            if (!phone) {
+                resultDiv.innerHTML = '<div class="step error">Please enter a phone number</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/otp/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone_number: phone })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    resultDiv.innerHTML = `<div class="step success">✅ ${result.message}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="step error">❌ ${result.message}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="step error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function verifyOTP() {
+            const phone = document.getElementById('phone').value;
+            const otp = document.getElementById('otp').value;
+            const resultDiv = document.getElementById('verify-result');
+
+            if (!phone || !otp) {
+                resultDiv.innerHTML = '<div class="step error">Please enter both phone and OTP</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/otp/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        phone_number: phone,
+                        otp_code: otp
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    authData = result;
+                    resultDiv.innerHTML = `<div class="step success">✅ ${result.message}</div>`;
+                    showAuthInfo(result);
+                    showDashboardLinks(result);
+                    showAPIExamples(result);
+                } else {
+                    resultDiv.innerHTML = `<div class="step error">❌ ${result.message}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="step error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        function showAuthInfo(data) {
+            const authInfoDiv = document.getElementById('auth-info');
+            const authDetailsDiv = document.getElementById('auth-details');
+
+            authDetailsDiv.innerHTML = `
+                <strong>Customer Information:</strong><br>
+                • ID: ${data.customer.id}<br>
+                • Name: ${data.customer.name}<br>
+                • Phone: ${data.customer.phone}<br>
+                • 16-Digit Auth Key: <code>${data.customer.auth_key}</code><br><br>
+
+                <strong>Authentication Token:</strong><br>
+                • Token: <code>${data.auth.token}</code><br>
+                • Expires: ${data.auth.expires_at}<br><br>
+
+                <strong>Generated URLs:</strong><br>
+                • Dashboard (Token): <code>${data.dashboard_url}</code><br>
+                • Dashboard (Auth Key): <code>${data.dashboard_url_with_key}</code>
+            `;
+
+            authInfoDiv.style.display = 'block';
+        }
+
+        function showDashboardLinks(data) {
+            const linksDiv = document.getElementById('dashboard-links');
+            const tokenLink = document.getElementById('dashboard-token-link');
+            const keyLink = document.getElementById('dashboard-key-link');
+
+            tokenLink.href = data.dashboard_url;
+            keyLink.href = data.dashboard_url_with_key;
+
+            linksDiv.style.display = 'block';
+        }
+
+        function showAPIExamples(data) {
+            const jsExample = document.getElementById('js-example');
+            const phpExample = document.getElementById('php-example');
+
+            jsExample.textContent = `// JavaScript/AJAX Example
+fetch('/dashboard', {
+    headers: {
+        'Authorization': 'Bearer ${data.auth.token}',
+        'X-Auth-Token': '${data.auth.token}'
+    }
+})
+.then(response => response.text())
+.then(html => {
+    // Dashboard HTML received
+    console.log('Dashboard loaded successfully');
+});
+
+// Or using URL parameters
+window.location.href = '${data.dashboard_url}';`;
+
+            phpExample.textContent = `<?php
+// PHP/iframe Example
+$auth_token = '${data.auth.token}';
+$auth_key = '${data.customer.auth_key}';
+$dashboard_url = '${data.dashboard_url}';
+
+// Option 1: Redirect to dashboard
+header('Location: ' . $dashboard_url);
+
+// Option 2: Load in iframe
+echo '<iframe src="' . $dashboard_url . '" width="100%" height="600"></iframe>';
+
+// Option 3: Make API call with cURL
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_URL, 'http://yoursite.com/dashboard');
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    'Authorization: Bearer ' . $auth_token,
+    'X-Auth-Token: ' . $auth_token
+]);
+$response = curl_exec($ch);
+?>`;
+        }
+
+        async function testAuth() {
+            const resultDiv = document.getElementById('auth-test-result');
+
+            if (!authData) {
+                resultDiv.innerHTML = '<div class="step error">❌ No authentication data. Please complete OTP verification first.</div>';
+                return;
+            }
+
+            try {
+                // Test with token parameter
+                const response = await fetch(`/api/otp/test-auth?token=${authData.auth.token}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="step success">
+                            ✅ Authentication Test Successful!<br>
+                            Customer: ${result.customer.name} (ID: ${result.customer.id})<br>
+                            Auth Key: ${result.auth_info.auth_key}<br>
+                            Last Login: ${result.auth_info.last_login || 'Just now'}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="step error">❌ Auth Test Failed: ${result.message}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="step error">❌ Error: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

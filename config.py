@@ -8,12 +8,10 @@ BASE_DIR = Path(__file__).resolve().parent
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'om-engineers-secret-key-2024'
 
-    # Session configuration
-    PERMANENT_SESSION_LIFETIME = timedelta(days=30)  # Session lasts 30 days
-    SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SECURE = os.environ.get('FLASK_ENV') == 'production'  # True in production with HTTPS
-    SESSION_COOKIE_SAMESITE = 'None' if os.environ.get('FLASK_ENV') == 'production' else 'Lax'  # Required for iframe embedding in prod
-    SESSION_COOKIE_DOMAIN = None  # Allow cross-domain in iframe
+    # Authentication configuration
+    AUTH_TOKEN_EXPIRY_HOURS = 24 * 30  # 30 days
+    MAX_AUTH_ATTEMPTS = 5  # Max failed authentication attempts
+    AUTH_RATE_LIMIT = 10  # Max auth requests per minute
 
     # Database configuration
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or f'sqlite:///{BASE_DIR / "om_engineers.db"}'

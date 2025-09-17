@@ -1,6 +1,8 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from datetime import datetime, date, time
 from models import Customer, Service, Appointment, AppointmentType
+from services.auth_service import AuthService
+from utils.auth_decorators import require_auth, get_current_customer, get_auth_response_data
 from database import db
 import requests
 import re
@@ -237,290 +239,133 @@ def terms():
     return render_template('terms.html')
 
 
-@main_bp.route('/logout')
-def logout():
-    """Logout user and clear session"""
-    # Clear all session data
-    session.clear()
-
-    # Add flash message for confirmation
-    flash('You have been logged out successfully.', 'success')
-
-    # Redirect to homepage
-    return redirect(url_for('main.index'))
+# Logout is now handled in OTP routes at /api/otp/logout
 
 @main_bp.route('/dashboard')
 def dashboard():
-    """User dashboard after successful OTP login"""
-    customer_name = 'Guest'
-    customer = None
-    customer_phone = ''
+    """User dashboard - supports authentication via token/auth_key in headers or URL parameters"""
+    # Try to get authenticated customer
+    customer = AuthService.get_customer_from_request(request)
 
-    # Check if user needs to complete authentication
-    if 'phone_number' in session and 'customer_id' not in session:
-        # User has pending phone verification but no customer_id - redirect to profile completion
-        flash('Please complete your profile to access the dashboard.', 'info')
-        return redirect(url_for('main.profile_completion'))
-
-    # Priority 1: Use customer_id from session (after account selection)
-    customer_id = session.get('customer_id')
-    if customer_id:
-        try:
-            customer = Customer.query.get(customer_id)
-            if customer:
-                customer_name = customer.name
-                customer_phone = customer.phone
-                # Ensure session has all required data
-                session['customer_name'] = customer.name
-                session['customer_phone'] = customer.phone
-                session.permanent = True
-        except Exception as e:
-            pass
-
-    # Priority 2: Look up by phone number from URL parameter or session
     if not customer:
-        customer_phone = request.args.get('phone', '').strip()
-        if not customer_phone:
-            customer_phone = session.get('customer_phone', '')
-
-        if customer_phone:
-            try:
-                customer = Customer.get_by_phone(customer_phone)
-                if customer:
-                    customer_name = customer.name
-                    # Update session with found customer data
-                    session['customer_id'] = customer.id
-                    session['customer_name'] = customer.name
-                    session['customer_phone'] = customer.phone
-                    session.permanent = True
-            except Exception as e:
-                pass
-
-    # Final fallback to session data
-    if not customer:
-        customer_name = session.get('customer_name', 'Guest')
-        if not customer_phone:
-            customer_phone = session.get('customer_phone', '')
-
-        # If we have no customer data at all, redirect to login
-        if customer_name == 'Guest' and not customer_phone:
+        # If no authentication found, return JSON error for API calls or redirect for browser
+        if request.headers.get('Content-Type') == 'application/json' or request.args.get('format') == 'json':
+            return jsonify({
+                'success': False,
+                'message': 'Authentication required. Please provide a valid token or auth key.',
+                'error_code': 'AUTH_REQUIRED'
+            }), 401
+        else:
+            # For browser requests, redirect to login
             flash('Please log in to access your dashboard.', 'info')
             return redirect(url_for('main.get_started'))
 
     # Fetch upcoming appointments for the customer
     upcoming_appointments = []
-    if customer:
-        try:
-            # Get appointments that are in the future and not cancelled
-            all_appointments = Appointment.query.filter_by(customer_id=customer.id).all()
-            now = datetime.now()
-            upcoming_appointments = [
-                apt for apt in all_appointments
-                if apt.appointment_date >= now.date() and
-                apt.status.value in ['pending', 'confirmed']
-            ]
-            # Sort by date and time
-            upcoming_appointments.sort(key=lambda x: (x.appointment_date, x.appointment_time))
-        except Exception as e:
-            upcoming_appointments = []
+    try:
+        # Get appointments that are in the future and not cancelled
+        all_appointments = Appointment.query.filter_by(customer_id=customer.id).all()
+        now = datetime.now()
+        upcoming_appointments = [
+            apt for apt in all_appointments
+            if apt.appointment_date >= now.date() and
+            apt.status.value in ['pending', 'confirmed']
+        ]
+        # Sort by date and time
+        upcoming_appointments.sort(key=lambda x: (x.appointment_date, x.appointment_time))
+    except Exception as e:
+        upcoming_appointments = []
 
     return render_template('user_dashboard.html',
-                         customer_name=customer_name,
-                         customer_phone=customer_phone,
+                         customer_name=customer.name,
+                         customer_phone=customer.phone,
                          customer=customer,
                          upcoming_appointments=upcoming_appointments)
 
-@main_bp.route('/profile-completion')
-def profile_completion():
-    """Profile completion page for new users"""
-    # Check if phone number is in session
-    if 'phone_number' not in session:
-        flash('Session expired. Please login again.', 'error')
-        return redirect(url_for('main.get_started'))
+@main_bp.route('/auth-test')
+def auth_test():
+    """Authentication test page - demonstrates complete OTP to dashboard flow"""
+    return render_template('auth_test.html')
 
-    return render_template('profile_completion.html')
+@main_bp.route('/profile/<auth_key>/update', methods=['POST'])
+@require_auth
+def update_profile(auth_key):
+    """Update user profile - requires authentication"""
+    customer = get_current_customer()
 
-@main_bp.route('/profile-completion', methods=['POST'])
-def profile_completion_post():
-    """Handle profile completion form submission"""
+    # Verify the auth_key matches the authenticated customer
+    if customer.auth_key != auth_key:
+        return jsonify({
+            'success': False,
+            'message': 'Access denied',
+            'error_code': 'ACCESS_DENIED'
+        }), 403
+
     try:
-        # Check if phone number is in session
-        if 'phone_number' not in session:
-            return jsonify({
-                'success': False,
-                'message': 'Session expired. Please login again.'
-            }), 400
-
         data = request.get_json() if request.is_json else request.form
-        full_name = data.get('full_name', '').strip()
+        name = data.get('name', '').strip()
         email = data.get('email', '').strip().lower()
-        house = data.get('house', '').strip()
-        road = data.get('road', '').strip()
-        landmark = data.get('landmark', '').strip()
-        zip_code = data.get('zip_code', '').strip()
-        city = data.get('city', '').strip()
-        state = data.get('state', '').strip()
+        address = data.get('address', '').strip()
 
         # Server-side validation
-        if not all([full_name, email, house, road, zip_code, city, state]):
-            return jsonify({
-                'success': False,
-                'message': 'All required fields must be filled'
-            }), 400
-
-        # Validate field lengths
-        if len(full_name) < 2:
+        if name and len(name) < 2:
             return jsonify({
                 'success': False,
                 'message': 'Name must be at least 2 characters long'
             }), 400
 
         # Email validation
-        email_pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
-        if not re.match(email_pattern, email):
-            return jsonify({
-                'success': False,
-                'message': 'Please enter a valid email address'
-            }), 400
+        if email:
+            email_pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
+            if not re.match(email_pattern, email):
+                return jsonify({
+                    'success': False,
+                    'message': 'Please enter a valid email address'
+                }), 400
 
-        # PIN code validation (6 digits)
-        if not re.match(r'^\d{6}$', zip_code):
-            return jsonify({
-                'success': False,
-                'message': 'Please enter a valid 6-digit PIN code'
-            }), 400
+        # Update customer fields
+        if name:
+            customer.name = sanitize_text(name)
+        if email:
+            customer.email = email
+        if address:
+            customer.address = address
 
-        # Name validation (letters, spaces, common punctuation only)
-        name_pattern = r'^[a-zA-Z\s\-\'\.]+$'
-        if not re.match(name_pattern, full_name):
-            return jsonify({
-                'success': False,
-                'message': 'Name can only contain letters, spaces, hyphens, and apostrophes'
-            }), 400
-
-        phone_number = session['phone_number']
-
-        # Sanitize all fields
-        full_name = sanitize_text(full_name)
-        house = sanitize_address_component(house)
-        road = sanitize_address_component(road)
-        landmark = sanitize_address_component(landmark) if landmark else ""
-        city = sanitize_address_component(city)
-        state = sanitize_address_component(state)
-        zip_code = re.sub(r'[^\d]', '', zip_code)  # Only digits for ZIP
-
-        # Combine address components
-        address_parts = [house, road]
-        if landmark:
-            address_parts.append(landmark)
-        address_parts.extend([city, f"{state} {zip_code}"])
-        address = ", ".join(address_parts)
-
-        # Create new customer
-        customer = Customer(
-            name=full_name,
-            email=email,
-            phone=phone_number,
-            address=address
-        )
-        db.session.add(customer)
+        customer.updated_at = datetime.utcnow()
         db.session.commit()
-
-        # Store customer information in session
-        session['customer_id'] = customer.id
-        session['customer_phone'] = customer.phone
-        session['customer_name'] = customer.name
-        session.permanent = True  # Make session persistent
-        session.pop('phone_number', None)  # Remove temporary phone number
 
         return jsonify({
             'success': True,
-            'message': 'Profile completed successfully',
-            'redirect_url': url_for('main.dashboard', phone=phone_number)
+            'message': 'Profile updated successfully',
+            'customer': customer.to_dict()
         }), 200
 
     except Exception as e:
         db.session.rollback()
         return jsonify({
             'success': False,
-            'message': f'Server error: {str(e)}'
+            'message': f'Server error: {str(e)}',
+            'error_code': 'SERVER_ERROR'
         }), 500
 
-@main_bp.route('/account-selection')
-def account_selection():
-    """Account selection page for users with multiple accounts"""
-    # Check if phone number is in session
-    if 'phone_number' not in session:
-        flash('Session expired. Please login again.', 'error')
-        return redirect(url_for('main.get_started'))
+@main_bp.route('/customer/<auth_key>/info')
+@require_auth
+def get_customer_info(auth_key):
+    """Get customer information by auth key - requires authentication"""
+    customer = get_current_customer()
 
-    phone_number = session['phone_number']
-    customers = Customer.get_all_by_phone(phone_number)
-
-    if len(customers) <= 1:
-        flash('Invalid access to account selection.', 'error')
-        return redirect(url_for('main.get_started'))
-
-    return render_template('account_selection.html', customers=customers)
-
-@main_bp.route('/account-selection', methods=['POST'])
-def account_selection_post():
-    """Handle account selection form submission"""
-    try:
-        # Check if phone number is in session
-        if 'phone_number' not in session:
-            return jsonify({
-                'success': False,
-                'message': 'Session expired. Please login again.'
-            }), 400
-
-        data = request.get_json() if request.is_json else request.form
-        customer_id = data.get('customer_id')
-
-        if not customer_id:
-            return jsonify({
-                'success': False,
-                'message': 'Customer ID is required'
-            }), 400
-
-        phone_number = session['phone_number']
-
-        # Verify the customer belongs to this phone number
-        customer = Customer.query.get(customer_id)
-        if not customer:
-            return jsonify({
-                'success': False,
-                'message': 'Invalid customer selected'
-            }), 400
-
-        # Verify phone number matches
-        customer_clean_phone = ''.join(filter(str.isdigit, customer.phone))
-        session_clean_phone = ''.join(filter(str.isdigit, phone_number))
-
-        if customer_clean_phone != session_clean_phone:
-            return jsonify({
-                'success': False,
-                'message': 'Invalid customer selected'
-            }), 400
-
-        # Store customer information in session
-        session['customer_id'] = customer.id
-        session['customer_phone'] = customer.phone
-        session['customer_name'] = customer.name
-        session.permanent = True  # Make session persistent
-        session.pop('phone_number', None)  # Remove temporary phone number
-
-        return jsonify({
-            'success': True,
-            'message': 'Account selected successfully',
-            'redirect_url': url_for('main.dashboard')
-        }), 200
-
-    except Exception as e:
+    # Verify the auth_key matches the authenticated customer
+    if customer.auth_key != auth_key:
         return jsonify({
             'success': False,
-            'message': f'Server error: {str(e)}'
-        }), 500
+            'message': 'Access denied',
+            'error_code': 'ACCESS_DENIED'
+        }), 403
+
+    return jsonify({
+        'success': True,
+        'customer': customer.to_dict()
+    }), 200
 
 @main_bp.route('/api/pincode/<pincode>')
 def get_pincode_info(pincode):
