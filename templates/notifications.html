@@ -298,6 +298,8 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const markAllReadBtn = document.getElementById('markAllReadBtn');
+    let lastNotificationCount = {{ notifications|length }};
+    let lastUnreadCount = {{ unread_count }};
 
     // Mark all notifications as read
     if (markAllReadBtn) {
@@ -338,6 +340,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             // Fail silently if cross-origin
                         }
                     }
+
+                    // Update local counts
+                    lastUnreadCount = 0;
                 } else {
                     showToast('Failed to mark notifications as read', 'error');
                 }
@@ -346,6 +351,210 @@ document.addEventListener('DOMContentLoaded', function() {
                 showToast('Network error. Please try again.', 'error');
             }
         });
+    }
+
+    // Real-time notifications using Server-Sent Events
+    startNotificationsStream();
+
+    function startNotificationsStream() {
+        // Get auth parameters for SSE
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const authKey = urlParams.get('auth_key');
+
+        // Construct SSE URL with auth parameters
+        let sseUrl = '/api/notifications/stream';
+        const params = new URLSearchParams();
+
+        if (token) {
+            params.append('token', token);
+        }
+        if (authKey) {
+            params.append('auth_key', authKey);
+        }
+
+        if (params.toString()) {
+            sseUrl += '?' + params.toString();
+        }
+
+        // Create EventSource connection
+        const eventSource = new EventSource(sseUrl);
+
+        eventSource.onopen = function(event) {
+            console.log('SSE connection opened');
+        };
+
+        eventSource.onmessage = function(event) {
+            try {
+                const data = JSON.parse(event.data);
+
+                if (data.type === 'connected') {
+                    console.log('Connected to notification stream');
+                } else if (data.type === 'notification_update') {
+                    // New notification received - refresh the list
+                    checkForNewNotifications();
+                    showToast('New notification received!');
+                } else if (data.type === 'keepalive') {
+                    // Keepalive message - ignore
+                }
+            } catch (error) {
+                console.log('Error parsing SSE message:', error);
+            }
+        };
+
+        eventSource.onerror = function(event) {
+            console.log('SSE connection error:', event);
+            // Fall back to polling if SSE fails
+            eventSource.close();
+            setTimeout(startPollingFallback, 5000);
+        };
+
+        // Also set up polling as backup
+        startPollingFallback();
+    }
+
+    function startPollingFallback() {
+        // Fallback polling every 10 seconds (less frequent than SSE)
+        setInterval(async function() {
+            try {
+                await checkForNewNotifications();
+            } catch (error) {
+                console.log('Polling error:', error);
+            }
+        }, 10000);
+
+        // Check immediately
+        setTimeout(checkForNewNotifications, 1000);
+    }
+
+    async function checkForNewNotifications() {
+        try {
+            const headers = getAuthHeaders();
+            const response = await fetch('/api/notifications?limit=50', {
+                headers: headers
+            });
+
+            if (!response.ok) return;
+
+            const data = await response.json();
+            if (!data.success) return;
+
+            const currentNotificationCount = data.notifications.length;
+            const currentUnreadCount = data.unread_count;
+
+            // Check if there are new notifications
+            if (currentNotificationCount > lastNotificationCount) {
+                // New notifications arrived
+                updateNotificationsList(data.notifications);
+                showToast('New notification received!');
+            } else if (currentUnreadCount !== lastUnreadCount) {
+                // Unread count changed (might be from other window)
+                updateNotificationsList(data.notifications);
+            }
+
+            // Update counts
+            lastNotificationCount = currentNotificationCount;
+            lastUnreadCount = currentUnreadCount;
+
+            // Update mark all button visibility
+            const markAllBtn = document.getElementById('markAllReadBtn');
+            if (markAllBtn) {
+                if (currentUnreadCount > 0) {
+                    markAllBtn.style.display = 'flex';
+                } else {
+                    markAllBtn.style.display = 'none';
+                }
+            }
+
+        } catch (error) {
+            console.log('Error checking for new notifications:', error);
+        }
+    }
+
+    function updateNotificationsList(notifications) {
+        const notificationsList = document.querySelector('.notifications-list');
+        if (!notificationsList) return;
+
+        // Clear existing notifications
+        notificationsList.innerHTML = '';
+
+        if (notifications.length > 0) {
+            notifications.forEach(notification => {
+                const notificationCard = createNotificationCard(notification);
+                notificationsList.appendChild(notificationCard);
+            });
+        } else {
+            // Show empty state
+            const emptyState = document.createElement('div');
+            emptyState.className = 'empty-state';
+            emptyState.innerHTML = `
+                <div class="empty-icon">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18 8A6 6 0 0 0 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" stroke="#9CA3AF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M13.73 21A2 2 0 0 1 9.27 21" stroke="#9CA3AF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <h3 class="empty-title">No notifications yet</h3>
+                <p class="empty-description">You'll see updates about your appointments and services here.</p>
+            `;
+            notificationsList.appendChild(emptyState);
+        }
+    }
+
+    function createNotificationCard(notification) {
+        const card = document.createElement('div');
+        card.className = `notification-card${!notification.is_read ? ' unread' : ''}`;
+        card.setAttribute('data-notification-id', notification.id);
+        card.onclick = () => handleNotificationClick(notification.action_url, notification.id);
+
+        const main = document.createElement('div');
+        main.className = 'notification-main';
+
+        const details = document.createElement('div');
+        details.className = 'notification-details';
+
+        const message = document.createElement('p');
+        message.className = 'notification-message';
+        message.textContent = notification.message;
+        details.appendChild(message);
+
+        if (notification.action_text && notification.action_url) {
+            const action = document.createElement('div');
+            action.className = 'notification-action';
+
+            const actionLink = document.createElement('span');
+            actionLink.className = 'action-link';
+            actionLink.textContent = notification.action_text;
+            action.appendChild(actionLink);
+
+            const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            arrow.setAttribute('width', '16');
+            arrow.setAttribute('height', '16');
+            arrow.setAttribute('viewBox', '0 0 24 24');
+            arrow.setAttribute('fill', 'none');
+
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', 'M9 18L15 12L9 6');
+            path.setAttribute('stroke', 'currentColor');
+            path.setAttribute('stroke-width', '2');
+            path.setAttribute('stroke-linecap', 'round');
+            path.setAttribute('stroke-linejoin', 'round');
+
+            arrow.appendChild(path);
+            action.appendChild(arrow);
+            details.appendChild(action);
+        }
+
+        main.appendChild(details);
+
+        if (!notification.is_read) {
+            const dot = document.createElement('div');
+            dot.className = 'unread-dot';
+            main.appendChild(dot);
+        }
+
+        card.appendChild(main);
+        return card;
     }
 });
 

@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, Response
 from datetime import datetime, date, time
 from models import Customer, Service, Appointment, AppointmentType, Notification
 from services.auth_service import AuthService
@@ -6,8 +6,33 @@ from utils.auth_decorators import require_auth, get_current_customer, get_auth_r
 from database import db
 import requests
 import re
+import json
+import time
+from threading import Lock
+from queue import Queue
 
 main_bp = Blueprint('main', __name__)
+
+# Simple notification broadcasting system
+notification_clients = {}
+clients_lock = Lock()
+
+def broadcast_notification_update(customer_id):
+    """Broadcast notification update to specific customer"""
+    with clients_lock:
+        if customer_id in notification_clients:
+            clients = notification_clients[customer_id][:]
+            for client_queue in clients:
+                try:
+                    client_queue.put({
+                        'type': 'notification_update',
+                        'customer_id': customer_id,
+                        'timestamp': time.time()
+                    })
+                except:
+                    # Remove dead clients
+                    if client_queue in notification_clients[customer_id]:
+                        notification_clients[customer_id].remove(client_queue)
 
 def sanitize_text(text):
     """Sanitize and format text fields"""
@@ -718,3 +743,51 @@ def get_notifications():
             'success': False,
             'message': f'Error getting notifications: {str(e)}'
         }), 500
+
+@main_bp.route('/api/notifications/stream')
+@require_auth
+def notification_stream():
+    """Server-Sent Events stream for real-time notifications"""
+    customer = get_current_customer()
+
+    if not customer:
+        return jsonify({'success': False, 'message': 'Authentication required'}), 401
+
+    def event_stream():
+        # Create a queue for this client
+        client_queue = Queue()
+
+        # Register this client
+        with clients_lock:
+            if customer.id not in notification_clients:
+                notification_clients[customer.id] = []
+            notification_clients[customer.id].append(client_queue)
+
+        try:
+            # Send initial connection message
+            yield f"data: {json.dumps({'type': 'connected', 'customer_id': customer.id})}\n\n"
+
+            while True:
+                try:
+                    # Wait for new notifications with timeout
+                    message = client_queue.get(timeout=30)
+                    yield f"data: {json.dumps(message)}\n\n"
+                except:
+                    # Timeout - send keepalive
+                    yield f"data: {json.dumps({'type': 'keepalive', 'timestamp': time.time()})}\n\n"
+
+        except GeneratorExit:
+            pass
+        finally:
+            # Clean up client
+            with clients_lock:
+                if customer.id in notification_clients and client_queue in notification_clients[customer.id]:
+                    notification_clients[customer.id].remove(client_queue)
+                    if not notification_clients[customer.id]:
+                        del notification_clients[customer.id]
+
+    response = Response(event_stream(), mimetype='text/event-stream')
+    response.headers['Cache-Control'] = 'no-cache'
+    response.headers['Connection'] = 'keep-alive'
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response

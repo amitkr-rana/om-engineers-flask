@@ -400,8 +400,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize notifications
     loadNotificationCount();
 
-    // Set up periodic refresh of notification count
-    setInterval(loadNotificationCount, 30000); // Check every 30 seconds
+    // Set up real-time notification updates using SSE
+    startNotificationStream();
+
+    // Also set up periodic refresh as backup
+    setInterval(loadNotificationCount, 10000); // Check every 10 seconds as backup
 
     // Listen for notification updates from other windows (like notification page in iframe)
     window.addEventListener('message', function(event) {
@@ -553,6 +556,58 @@ function getAuthHeaders() {
     }
 
     return headers;
+}
+
+function startNotificationStream() {
+    // Get auth parameters for SSE
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const authKey = urlParams.get('auth_key');
+
+    // Construct SSE URL with auth parameters
+    let sseUrl = '/api/notifications/stream';
+    const params = new URLSearchParams();
+
+    if (token) {
+        params.append('token', token);
+    }
+    if (authKey) {
+        params.append('auth_key', authKey);
+    }
+
+    if (params.toString()) {
+        sseUrl += '?' + params.toString();
+    }
+
+    // Create EventSource connection
+    const eventSource = new EventSource(sseUrl);
+
+    eventSource.onopen = function(event) {
+        console.log('Dashboard SSE connection opened');
+    };
+
+    eventSource.onmessage = function(event) {
+        try {
+            const data = JSON.parse(event.data);
+
+            if (data.type === 'connected') {
+                console.log('Dashboard connected to notification stream');
+            } else if (data.type === 'notification_update') {
+                // New notification received - update badge immediately
+                loadNotificationCount();
+            } else if (data.type === 'keepalive') {
+                // Keepalive message - ignore
+            }
+        } catch (error) {
+            console.log('Error parsing SSE message:', error);
+        }
+    };
+
+    eventSource.onerror = function(event) {
+        console.log('Dashboard SSE connection error:', event);
+        // Fall back to polling if SSE fails
+        eventSource.close();
+    };
 }
 
 // No resize handler needed - logout button stays on all screen sizes

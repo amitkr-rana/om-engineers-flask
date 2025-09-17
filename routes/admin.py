@@ -3,6 +3,7 @@ from datetime import datetime, date, time
 from models import Customer, Service, Appointment, AppointmentStatus, AppointmentType, Notification, NotificationType
 from database import db
 import traceback
+from routes.main import broadcast_notification_update
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -370,6 +371,9 @@ def update_appointment(appointment_id):
                 action_text=action_text,
                 action_url=action_url
             )
+
+            # Broadcast notification update immediately
+            broadcast_notification_update(appointment.customer_id)
 
         db.session.commit()
         flash('Appointment updated successfully!', 'success')
