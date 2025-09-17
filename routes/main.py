@@ -261,10 +261,28 @@ def dashboard():
     if not customer:
         customer_name = session.get('customer_name', 'Guest')
 
+    # Fetch upcoming appointments for the customer
+    upcoming_appointments = []
+    if customer:
+        try:
+            # Get appointments that are in the future and not cancelled
+            all_appointments = Appointment.query.filter_by(customer_id=customer.id).all()
+            now = datetime.now()
+            upcoming_appointments = [
+                apt for apt in all_appointments
+                if apt.appointment_date >= now.date() and
+                apt.status.value in ['pending', 'confirmed']
+            ]
+            # Sort by date and time
+            upcoming_appointments.sort(key=lambda x: (x.appointment_date, x.appointment_time))
+        except Exception as e:
+            upcoming_appointments = []
+
     return render_template('user_dashboard.html',
                          customer_name=customer_name,
                          customer_phone=customer_phone,
-                         customer=customer)
+                         customer=customer,
+                         upcoming_appointments=upcoming_appointments)
 
 @main_bp.route('/profile-completion')
 def profile_completion():

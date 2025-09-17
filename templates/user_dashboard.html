@@ -31,6 +31,7 @@
             <!-- Quick Actions -->
             <div class="quick-actions-section">
                 <h2 class="section-title">Quick Actions</h2>
+                <br>
                 <div class="quick-actions-grid">
                     <div class="action-item">
                         <div class="action-icon book-new">
@@ -69,30 +70,35 @@
 
             <!-- Upcoming Services -->
             <div class="upcoming-services-section">
+                {% if upcoming_appointments and upcoming_appointments|length > 0 %}
                 <h2 class="section-title">Upcoming Services</h2>
+                {% endif %}
 
-                <div class="service-item">
-                    <div class="service-icon-container orange">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24zM12 15.4l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.1l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.4z" fill="currentColor"/>
-                        </svg>
+                {% if upcoming_appointments and upcoming_appointments|length > 0 %}
+                    {% for appointment in upcoming_appointments %}
+                    <div class="service-item">
+                        <div class="service-icon-container {{ 'orange' if loop.index % 2 == 1 else 'blue' }}">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                {% if appointment.service and appointment.service.icon %}
+                                    <text x="12" y="16" text-anchor="middle" fill="currentColor" font-size="16">{{ appointment.service.icon }}</text>
+                                {% else %}
+                                    <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" fill="currentColor"/>
+                                {% endif %}
+                            </svg>
+                        </div>
+                        <div class="service-details">
+                            <h3 class="service-title">{{ appointment.service.name if appointment.service else 'Service' }}</h3>
+                            <p class="service-time">
+                                {{ appointment.appointment_date.strftime('%b %d, %Y') }}, {{ appointment.appointment_time.strftime('%I:%M %p') }}
+                            </p>
+                        </div>
                     </div>
-                    <div class="service-details">
-                        <h3 class="service-title">Leaky Faucet Repair</h3>
-                        <p class="service-time">Today, 4:30 PM</p>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <p class="empty-message">No upcoming appointments scheduled.<br>Click Book New to schedule an appointment.</p>
                     </div>
-                </div>
-                <div class="service-item">
-                    <div class="service-icon-container blue">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/>
-                        </svg>
-                    </div>
-                    <div class="service-details">
-                        <h3 class="service-title">HVAC System Check</h3>
-                        <p class="service-time">Tomorrow, 2:00 PM</p>
-                    </div>
-                </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -246,6 +252,19 @@
 /* Upcoming Services Section */
 .upcoming-services-section {
     margin-bottom: var(--space-6);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: var(--space-8) var(--space-4);
+}
+
+.empty-message {
+    font-size: var(--font-size-base);
+    color: var(--gray-500);
+    line-height: 1.5;
+    margin: 0;
 }
 
 .service-item {
