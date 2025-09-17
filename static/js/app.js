@@ -240,14 +240,24 @@ document.addEventListener('DOMContentLoaded', function() {
     anchorLinks.forEach(link => {
         link.addEventListener('click', function(e) {
             const targetId = this.getAttribute('href');
-            const targetElement = document.querySelector(targetId);
 
-            if (targetElement) {
-                e.preventDefault();
-                targetElement.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
+            // Skip if href is just "#" or invalid
+            if (!targetId || targetId === '#' || targetId.length <= 1) {
+                return;
+            }
+
+            try {
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    e.preventDefault();
+                    targetElement.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            } catch (error) {
+                // Invalid selector, skip smooth scrolling
+                console.log('Invalid selector for smooth scrolling:', targetId);
             }
         });
     });
