@@ -11,7 +11,9 @@ class Config:
     # Session configuration
     PERMANENT_SESSION_LIFETIME = timedelta(days=30)  # Session lasts 30 days
     SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
+    SESSION_COOKIE_SECURE = os.environ.get('FLASK_ENV') == 'production'  # True in production with HTTPS
+    SESSION_COOKIE_SAMESITE = 'None' if os.environ.get('FLASK_ENV') == 'production' else 'Lax'  # Required for iframe embedding in prod
+    SESSION_COOKIE_DOMAIN = None  # Allow cross-domain in iframe
 
     # Database configuration
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or f'sqlite:///{BASE_DIR / "om_engineers.db"}'

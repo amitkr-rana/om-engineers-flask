@@ -59,10 +59,17 @@ def verify_otp():
                 # Scenario 1: Phone number not in database - redirect to profile completion
                 session['phone_number'] = phone_number
                 session.permanent = True  # Make session persistent
+                # Check if request is from iframe
+                is_iframe = request.headers.get('X-Frame-Options') or request.args.get('iframe')
+                redirect_url = url_for('main.profile_completion')
+                if is_iframe:
+                    redirect_url += '?iframe=1'
+
                 return jsonify({
                     'success': True,
                     'message': 'OTP verified successfully',
-                    'redirect_url': url_for('main.profile_completion')
+                    'redirect_url': redirect_url,
+                    'iframe_mode': bool(is_iframe)
                 }), 200
 
             elif len(customers) == 1:
@@ -73,20 +80,36 @@ def verify_otp():
                 session['customer_name'] = customer.name
                 session.permanent = True  # Make session persistent
                 session.pop('phone_number', None)  # Remove temporary phone number
+
+                # Check if request is from iframe
+                is_iframe = request.headers.get('X-Frame-Options') or request.args.get('iframe')
+                redirect_url = url_for('main.dashboard')
+                if is_iframe:
+                    redirect_url += '?iframe=1'
+
                 return jsonify({
                     'success': True,
                     'message': 'OTP verified successfully',
-                    'redirect_url': url_for('main.dashboard')
+                    'redirect_url': redirect_url,
+                    'iframe_mode': bool(is_iframe)
                 }), 200
 
             else:
                 # Scenario 2: Multiple accounts - redirect to account selection
                 session['phone_number'] = phone_number
                 session.permanent = True  # Make session persistent
+
+                # Check if request is from iframe
+                is_iframe = request.headers.get('X-Frame-Options') or request.args.get('iframe')
+                redirect_url = url_for('main.account_selection')
+                if is_iframe:
+                    redirect_url += '?iframe=1'
+
                 return jsonify({
                     'success': True,
                     'message': 'OTP verified successfully',
-                    'redirect_url': url_for('main.account_selection')
+                    'redirect_url': redirect_url,
+                    'iframe_mode': bool(is_iframe)
                 }), 200
 
         return jsonify({
