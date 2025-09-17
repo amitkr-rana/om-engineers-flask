@@ -4,69 +4,99 @@
 
 {% block content %}
 <div class="dashboard-content">
-    <div class="container">
-        <!-- Customer Profile Section -->
-        <div class="dashboard-profile">
-            <div class="profile-avatar">
-                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='40' fill='%23e2e8f0'/%3E%3Cpath d='M40 40c7.364 0 13.333-5.969 13.333-13.333S47.364 13.334 40 13.334s-13.333 5.969-13.333 13.333S32.636 40 40 40zm0 6.667c-9.205 0-16.667 7.462-16.667 16.666h33.334c0-9.204-7.462-16.666-16.667-16.666z' fill='%2394a3b8'/%3E%3C/svg%3E" alt="Profile Avatar" class="avatar-image">
+    <!-- Blue Header Section -->
+    <div class="dashboard-header">
+        <div class="container">
+            <br>
+            <div class="welcome-section">
+                <div class="profile-avatar">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50' viewBox='0 0 50 50'%3E%3Ccircle cx='25' cy='25' r='25' fill='%23ffffff'/%3E%3Cpath d='M25 25c4.602 0 8.333-3.731 8.333-8.333S29.602 8.334 25 8.334s-8.333 3.731-8.333 8.333S20.398 25 25 25zm0 4.167c-5.753 0-10.417 4.664-10.417 10.416h20.834c0-5.752-4.664-10.416-10.417-10.416z' fill='%233b82f6'/%3E%3C/svg%3E" alt="Profile Avatar" class="avatar-image">
+                </div>
+                <div class="welcome-text">
+                    <p class="welcome-back">Welcome back,</p>
+                    <h1 class="customer-name">{{ customer_name.split()[0] if customer_name and customer_name.split() else customer_name }}!</h1>
+                </div>
+                <div class="notification-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" fill="white"/>
+                    </svg>
+                </div>
             </div>
-            <h1 class="profile-name">{{ customer_name }}</h1>
-            <p class="profile-status">Verified Customer</p>
         </div>
-
-        <!-- Upcoming Appointments -->
-        <div class="dashboard-section">
-            <h2 class="section-title">Upcoming Appointments</h2>
-            <div class="appointment-card">
-                <div class="appointment-info">
-                    <div class="appointment-date">
-                        <span class="date-day">Tomorrow, 2:00 PM</span>
+    </div>
+    <br>
+    <!-- White Content Section -->
+    <div class="dashboard-body">
+        <div class="container">
+            <!-- Quick Actions -->
+            <div class="quick-actions-section">
+                <h2 class="section-title">Quick Actions</h2>
+                <div class="quick-actions-grid">
+                    <div class="action-item">
+                        <div class="action-icon book-new">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="currentColor"/>
+                            </svg>
+                        </div>
+                        <span class="action-label">Book New</span>
                     </div>
-                    <h3 class="appointment-title">HVAC System Check</h3>
-                    <p class="appointment-technician">Technician: Mark Johnson</p>
-                </div>
-                <div class="appointment-image">
-                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' fill='%23f1f5f9' rx='6'/%3E%3Cpath d='M15 11h30a4 4 0 0 1 4 4v30a4 4 0 0 1-4 4H15a4 4 0 0 1-4-4V15a4 4 0 0 1 4-4z' fill='%23cbd5e1'/%3E%3Ccircle cx='30' cy='26' r='6' fill='%2394a3b8'/%3E%3Cpath d='M19 38h22v3H19z' fill='%2394a3b8'/%3E%3C/svg%3E" alt="HVAC Unit" class="service-image">
+                    <div class="action-item">
+                        <div class="action-icon history">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z" fill="currentColor"/>
+                            </svg>
+                        </div>
+                        <span class="action-label">History</span>
+                    </div>
+                    <div class="action-item">
+                        <div class="action-icon support">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" fill="currentColor"/>
+                            </svg>
+                        </div>
+                        <span class="action-label">Support</span>
+                    </div>
+                    <div class="action-item">
+                        <div class="action-icon settings">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" fill="currentColor"/>
+                            </svg>
+                        </div>
+                        <span class="action-label">Settings</span>
+                    </div>
                 </div>
             </div>
-        </div>
-        <br>
 
-        <!-- Service History -->
-        <div class="dashboard-section">
-            <h2 class="section-title">Service History</h2>
+            <!-- Upcoming Services -->
+            <div class="upcoming-services-section">
+                <h2 class="section-title">Upcoming Services</h2>
 
-            <div class="history-item">
-                <div class="history-icon">
-                    <div class="service-icon plumbing">🔧</div>
+                <div class="service-item">
+                    <div class="service-icon-container orange">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24zM12 15.4l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.1l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.4z" fill="currentColor"/>
+                        </svg>
+                    </div>
+                    <div class="service-details">
+                        <h3 class="service-title">Leaky Faucet Repair</h3>
+                        <p class="service-time">Today, 4:30 PM</p>
+                    </div>
                 </div>
-                <div class="history-details">
-                    <h3 class="history-title">Plumbing Repair</h3>
-                    <p class="history-date">Completed on July 15, 2024</p>
+                <div class="service-item">
+                    <div class="service-icon-container blue">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/>
+                        </svg>
+                    </div>
+                    <div class="service-details">
+                        <h3 class="service-title">HVAC System Check</h3>
+                        <p class="service-time">Tomorrow, 2:00 PM</p>
+                    </div>
                 </div>
-                <div class="history-arrow">›</div>
-            </div>
-            <div class="history-item">
-                <div class="history-icon">
-                    <div class="service-icon electrical">⚡</div>
-                </div>
-                <div class="history-details">
-                    <h3 class="history-title">Electrical Inspection</h3>
-                    <p class="history-date">Completed on June 20, 2024</p>
-                </div>
-                <div class="history-arrow">›</div>
             </div>
         </div>
-        <br>
-        <br>
-        <br>
-        <hr>
-        <!-- Schedule Appointment Button -->
-        <div class="schedule-appointment-sticky">
-            <a href="{{ url_for('main.get_started') }}" class="btn-schedule">
-                + Schedule Appointment
-            </a>
-        </div>
+    </div>
+</div>
     </div>
 </div>
 {% endblock %}
@@ -76,403 +106,270 @@
 .dashboard-content {
     min-height: calc(100vh - var(--header-height));
     min-height: calc(100dvh - var(--header-height));
-    background-color: var(--white);
-    padding: var(--space-4) 0;
+    background-color: var(--gray-50);
+}
+
+/* Blue Header Section */
+.dashboard-header {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    padding: var(--space-8) 0 var(--space-12) 0;
+    color: white;
+}
+
+.welcome-section {
     display: flex;
-    align-items: flex-start;
-    justify-content: center;
-}
-
-.dashboard-content .container {
-    max-width: 600px;
-    width: 100%;
-    height: auto;
-}
-
-/* Profile Section */
-.dashboard-profile {
-    text-align: center;
-    margin-bottom: var(--space-6);
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
 }
 
 .profile-avatar {
-    margin-bottom: var(--space-3);
+    flex-shrink: 0;
 }
 
 .avatar-image {
-    width: 80px;
-    height: 80px;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
-    border: 3px solid var(--gray-200);
+    border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
-.profile-name {
+.welcome-text {
+    flex: 1;
+}
+
+.welcome-back {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: var(--font-size-base);
+    margin: 0 0 var(--space-1) 0;
+}
+
+.customer-name {
+    color: white;
     font-size: var(--font-size-2xl);
     font-weight: var(--font-weight-bold);
-    color: var(--gray-900);
-    margin-bottom: var(--space-1);
-}
-
-.profile-status {
-    color: var(--gray-600);
-    font-size: var(--font-size-base);
     margin: 0;
 }
 
-/* Dashboard Sections */
-.dashboard-section {
-    margin-bottom: var(--space-6);
+.notification-icon {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.dashboard-section:last-of-type {
-    margin-bottom: var(--space-4);
+/* White Body Section */
+.dashboard-body {
+    background: white;
+    margin-top: calc(-1 * var(--space-8));
+    border-radius: var(--border-radius-xl) var(--border-radius-xl) 0 0;
+    padding: var(--space-6) 0 var(--space-8) 0;
+    min-height: calc(60vh);
 }
 
+.dashboard-content .container {
+    max-width: 400px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 var(--space-4);
+}
+
+/* Section Titles */
 .section-title {
     font-size: var(--font-size-xl);
     font-weight: var(--font-weight-bold);
     color: var(--gray-900);
-    margin-bottom: var(--space-3);
+    margin-bottom: var(--space-4);
 }
 
-/* Upcoming Appointments */
-.appointment-card {
-    background: var(--white);
-    border-radius: var(--border-radius-lg);
-    padding: var(--space-4);
-    box-shadow: var(--shadow-md);
+/* Quick Actions Section */
+.quick-actions-section {
+    margin-bottom: var(--space-8);
+}
+
+.quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-4);
+}
+
+.action-item {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
+    gap: var(--space-2);
+    text-decoration: none;
+    color: inherit;
 }
 
-.appointment-info {
-    flex: 1;
-}
-
-.appointment-date .date-day {
-    color: var(--gray-600);
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-medium);
-}
-
-.appointment-title {
-    font-size: var(--font-size-lg);
-    font-weight: var(--font-weight-bold);
-    color: var(--gray-900);
-    margin: var(--space-1) 0;
-}
-
-.appointment-technician {
-    color: var(--gray-600);
-    font-size: var(--font-size-sm);
-    margin: 0;
-}
-
-.appointment-image {
-    flex-shrink: 0;
-}
-
-.service-image {
-    width: 60px;
-    height: 60px;
-    border-radius: var(--border-radius);
-}
-
-/* Service History */
-.history-item {
-    display: flex;
-    align-items: center;
-    padding: var(--space-3);
-    background: var(--gray-50);
-    border-radius: var(--border-radius);
-    margin-bottom: var(--space-2);
-    transition: background-color 0.2s;
-}
-
-.history-item:last-child {
-    margin-bottom: 0;
-}
-
-.history-item:hover {
-    background: var(--gray-100);
-}
-
-.history-icon {
-    margin-right: var(--space-3);
-}
-
-.service-icon {
-    width: 40px;
-    height: 40px;
+.action-icon {
+    width: 56px;
+    height: 56px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: var(--font-size-lg);
-    color: white;
+    color: var(--primary-color);
+    transition: all 0.2s;
 }
 
-.service-icon.plumbing {
-    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+.action-icon.book-new {
+    background: rgba(59, 130, 246, 0.1);
 }
 
-.service-icon.electrical {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
+.action-icon.history {
+    background: rgba(168, 85, 247, 0.1);
+    color: #a855f7;
 }
 
-.history-details {
-    flex: 1;
+.action-icon.support {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
 }
 
-.history-title {
-    font-size: var(--font-size-base);
-    font-weight: var(--font-weight-semibold);
-    color: var(--gray-900);
-    margin: 0;
+.action-icon.settings {
+    background: rgba(107, 114, 128, 0.1);
+    color: #6b7280;
 }
 
-.history-date {
-    color: var(--gray-600);
-    font-size: var(--font-size-xs);
-    margin: 0;
+.action-label {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--gray-700);
+    text-align: center;
 }
 
-.history-arrow {
-    font-size: var(--font-size-xl);
-    color: var(--gray-400);
-    font-weight: var(--font-weight-bold);
+/* Upcoming Services Section */
+.upcoming-services-section {
+    margin-bottom: var(--space-6);
 }
 
-/* Schedule Appointment Button */
-.schedule-appointment-sticky {
-    position: sticky;
-    bottom: var(--space-3);
-    margin-top: var(--space-4);
-    z-index: 100;
+.service-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    background: white;
+    border-radius: var(--border-radius-lg);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-bottom: var(--space-3);
 }
 
-.btn-schedule {
+.service-item:last-child {
+    margin-bottom: 0;
+}
+
+.service-icon-container {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--border-radius-lg);
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 100%;
-    background: var(--primary-color);
     color: white;
-    font-size: var(--font-size-lg);
-    font-weight: var(--font-weight-semibold);
-    text-align: center;
-    padding: var(--space-4);
-    border-radius: var(--border-radius-xl);
-    text-decoration: none;
-    transition: background-color 0.2s;
-    box-shadow: var(--shadow-lg);
-    min-height: var(--min-touch-target);
-    border-top: 1px solid var(--gray-200);
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1), var(--shadow-lg);
+    flex-shrink: 0;
 }
 
-.btn-schedule:hover {
-    background: var(--primary-dark);
-    text-decoration: none;
+.service-icon-container.orange {
+    background: linear-gradient(135deg, #f97316, #ea580c);
+}
+
+.service-icon-container.blue {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.service-details {
+    flex: 1;
+}
+
+.service-title {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--gray-900);
+    margin: 0 0 var(--space-1) 0;
+}
+
+.service-time {
+    font-size: var(--font-size-sm);
+    color: var(--gray-600);
+    margin: 0 0 var(--space-2) 0;
+}
+
+.technician-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.tech-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--gray-300);
+}
+
+.tech-name {
+    font-size: var(--font-size-sm);
+    color: var(--gray-600);
+}
+
+.service-menu {
+    color: var(--gray-400);
+    padding: var(--space-1);
 }
 
 /* Mobile Responsiveness */
 @media (max-width: 480px) {
-    .dashboard-content {
-        padding: var(--space-3) 0;
-        align-items: flex-start;
-        min-height: calc(100vh - var(--header-height));
-        min-height: calc(100dvh - var(--header-height));
+    .dashboard-header {
+        padding: var(--space-4) 0 var(--space-6) 0;
     }
 
     .avatar-image {
-        width: 70px;
-        height: 70px;
-    }
-
-    .profile-name {
-        font-size: var(--font-size-xl);
-    }
-
-    .dashboard-profile {
-        margin-bottom: var(--space-4);
-    }
-
-    .dashboard-section {
-        margin-bottom: var(--space-4);
-    }
-
-    .dashboard-section:last-of-type {
-        margin-bottom: var(--space-3);
-    }
-
-    .section-title {
-        font-size: var(--font-size-lg);
-        margin-bottom: var(--space-2);
-    }
-
-    .appointment-card {
-        padding: var(--space-3);
-    }
-
-    .service-image {
-        width: 50px;
-        height: 50px;
-    }
-
-    .service-icon {
-        width: 36px;
-        height: 36px;
-        font-size: var(--font-size-base);
-    }
-
-    .history-item {
-        padding: var(--space-2);
-        margin-bottom: var(--space-2);
-    }
-
-    .schedule-appointment-sticky {
-        bottom: var(--space-2);
-        margin-top: var(--space-3);
-    }
-}
-
-/* Height optimization for shorter screens */
-@media (max-height: 700px) {
-    .dashboard-content {
-        padding: var(--space-2) 0;
-        align-items: flex-start;
-    }
-
-    .dashboard-profile {
-        margin-bottom: var(--space-3);
-    }
-
-    .profile-avatar {
-        margin-bottom: var(--space-2);
-    }
-
-    .avatar-image {
-        width: 60px;
-        height: 60px;
-    }
-
-    .profile-name {
-        font-size: var(--font-size-lg);
-        margin-bottom: 0;
-    }
-
-    .profile-status {
-        font-size: var(--font-size-sm);
-    }
-
-    .dashboard-section {
-        margin-bottom: var(--space-3);
-    }
-
-    .dashboard-section:last-of-type {
-        margin-bottom: var(--space-2);
-    }
-
-    .section-title {
-        font-size: var(--font-size-base);
-        margin-bottom: var(--space-2);
-    }
-
-    .appointment-card {
-        padding: var(--space-2);
-    }
-
-    .appointment-title {
-        font-size: var(--font-size-base);
-        margin: var(--space-1) 0;
-    }
-
-    .service-image {
         width: 40px;
         height: 40px;
     }
 
-    .history-item {
-        padding: var(--space-2);
-        margin-bottom: var(--space-1);
+    .customer-name {
+        font-size: var(--font-size-xl);
     }
 
-    .service-icon {
-        width: 32px;
-        height: 32px;
-        font-size: var(--font-size-base);
+    .dashboard-body {
+        margin-top: calc(-1 * var(--space-4));
+        padding: var(--space-4) 0 var(--space-6) 0;
     }
 
-    .history-title {
-        font-size: var(--font-size-sm);
+    .quick-actions-grid {
+        gap: var(--space-3);
     }
 
-    .schedule-appointment-sticky {
-        bottom: var(--space-2);
-        margin-top: var(--space-2);
-    }
-}
-
-/* Very short screens optimization */
-@media (max-height: 600px) {
-    .dashboard-content {
-        padding: var(--space-1) 0;
+    .action-icon {
+        width: 48px;
+        height: 48px;
     }
 
-    .dashboard-profile {
-        margin-bottom: var(--space-2);
-    }
-
-    .avatar-image {
-        width: 50px;
-        height: 50px;
-    }
-
-    .profile-name {
-        font-size: var(--font-size-base);
-        margin-bottom: 0;
-    }
-
-    .profile-status {
+    .action-label {
         font-size: var(--font-size-xs);
     }
 
-    .dashboard-section {
+    .service-item {
+        padding: var(--space-3);
         margin-bottom: var(--space-2);
     }
 
-    .dashboard-section:last-of-type {
-        margin-bottom: var(--space-1);
+    .service-icon-container {
+        width: 40px;
+        height: 40px;
     }
 
     .section-title {
-        font-size: var(--font-size-sm);
-        margin-bottom: var(--space-1);
-    }
-
-    .appointment-card,
-    .history-item {
-        padding: var(--space-1);
-    }
-
-    .service-image {
-        width: 32px;
-        height: 32px;
-    }
-
-    .service-icon {
-        width: 24px;
-        height: 24px;
-        font-size: var(--font-size-sm);
-    }
-
-    .schedule-appointment-sticky {
-        bottom: var(--space-1);
-        margin-top: var(--space-1);
+        font-size: var(--font-size-lg);
+        margin-bottom: var(--space-3);
     }
 }
+
 </style>
 {% endblock %}
