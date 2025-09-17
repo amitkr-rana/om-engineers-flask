@@ -237,6 +237,18 @@ def terms():
     return render_template('terms.html')
 
 
+@main_bp.route('/logout')
+def logout():
+    """Logout user and clear session"""
+    # Clear all session data
+    session.clear()
+
+    # Add flash message for confirmation
+    flash('You have been logged out successfully.', 'success')
+
+    # Redirect to homepage
+    return redirect(url_for('main.index'))
+
 @main_bp.route('/dashboard')
 def dashboard():
     """User dashboard after successful OTP login"""
