@@ -19,9 +19,9 @@ class AuthService:
             customers = Customer.get_all_by_phone(phone_number)
 
             if len(customers) == 0:
-                # Create new customer for first-time user
+                # Create new customer for first-time user without default name
                 customer, created = Customer.get_or_create(
-                    name=f"User {phone_number[-4:]}",  # Default name
+                    name="",  # No default name - user will complete profile
                     email="",
                     phone=phone_number,
                     address=""

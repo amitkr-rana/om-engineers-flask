@@ -59,9 +59,19 @@ def verify_otp():
             customer, token = AuthService.authenticate_after_otp(phone_number)
 
             if customer and token:
-                # Return authentication data with dashboard URL
+                # Return authentication data
                 auth_data = get_auth_response_data(customer, token)
-                auth_data['dashboard_url'] = f"/dashboard?token={token}"
+
+                # Check if user needs to complete profile
+                if not customer.name or customer.name.strip() == "":
+                    # New user - redirect to profile completion
+                    auth_data['dashboard_url'] = f"/profile-completion?token={token}"
+                    auth_data['profile_incomplete'] = True
+                else:
+                    # Existing user - redirect to dashboard
+                    auth_data['dashboard_url'] = f"/dashboard?token={token}"
+                    auth_data['profile_incomplete'] = False
+
                 auth_data['dashboard_url_with_key'] = f"/dashboard?auth_key={auth_data['customer']['auth_key']}"
 
                 return jsonify(auth_data), 200

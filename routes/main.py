@@ -241,6 +241,89 @@ def terms():
 
 # Logout is now handled in OTP routes at /api/otp/logout
 
+@main_bp.route('/profile-completion')
+def profile_completion():
+    """Profile completion page for new users"""
+    # Get authenticated customer
+    customer = AuthService.get_customer_from_request(request)
+
+    if not customer:
+        # If no authentication, redirect to login
+        flash('Please log in to access profile completion.', 'info')
+        return redirect(url_for('main.get_started'))
+
+    # If profile already complete, redirect to dashboard
+    if customer.name and customer.name.strip():
+        return redirect(url_for('main.dashboard'))
+
+    return render_template('profile_completion.html', customer=customer)
+
+@main_bp.route('/profile-completion', methods=['POST'])
+def profile_completion_post():
+    """Handle profile completion form submission"""
+    try:
+        # Get authenticated customer
+        customer = AuthService.get_customer_from_request(request)
+
+        if not customer:
+            return jsonify({
+                'success': False,
+                'message': 'Authentication required',
+                'error_code': 'AUTH_REQUIRED'
+            }), 401
+
+        data = request.get_json() if request.is_json else request.form
+        full_name = data.get('full_name', '').strip()
+        email = data.get('email', '').strip().lower()
+        house = data.get('house', '').strip()
+        road = data.get('road', '').strip()
+        landmark = data.get('landmark', '').strip()
+        zip_code = data.get('zip_code', '').strip()
+        city = data.get('city', '').strip()
+        state = data.get('state', '').strip()
+
+        # Build complete address
+        address_parts = [house, road]
+        if landmark:
+            address_parts.append(landmark)
+        address_parts.extend([city, state, zip_code])
+        complete_address = ', '.join(filter(None, address_parts))
+
+        # Update customer
+        customer.name = sanitize_text(full_name)
+        customer.email = email
+        customer.address = complete_address
+        customer.updated_at = datetime.utcnow()
+
+        db.session.commit()
+
+        # Get token from request to include in redirect URL
+        token = None
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Bearer '):
+            token = auth_header.split(' ', 1)[1]
+        elif request.headers.get('X-Auth-Token'):
+            token = request.headers.get('X-Auth-Token')
+
+        # Include token in redirect URL
+        dashboard_url = url_for('main.dashboard')
+        if token:
+            dashboard_url = f"/dashboard?token={token}"
+
+        return jsonify({
+            'success': True,
+            'message': 'Profile completed successfully',
+            'redirect_url': dashboard_url
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': f'Server error: {str(e)}',
+            'error_code': 'SERVER_ERROR'
+        }), 500
+
 @main_bp.route('/dashboard')
 def dashboard():
     """User dashboard - supports authentication via token/auth_key in headers or URL parameters"""
@@ -266,6 +349,10 @@ def dashboard():
             flash('Please log in to access your dashboard.', 'info')
             return redirect(url_for('main.get_started'))
 
+    # Check if profile completion is needed
+    if not customer.name or customer.name.strip() == "":
+        return redirect(url_for('main.profile_completion'))
+
     # Fetch upcoming appointments for the customer
     upcoming_appointments = []
     try:
@@ -281,6 +368,10 @@ def dashboard():
         upcoming_appointments.sort(key=lambda x: (x.appointment_date, x.appointment_time))
     except Exception as e:
         upcoming_appointments = []
+
+    print(f"  Dashboard render - Customer: {customer}")
+    print(f"  Dashboard render - Customer name: '{customer.name}'")
+    print(f"  Dashboard render - Customer phone: '{customer.phone}'")
 
     return render_template('user_dashboard.html',
                          customer_name=customer.name,

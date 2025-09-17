@@ -433,11 +433,23 @@ document.addEventListener('DOMContentLoaded', function() {
         saveBtn.disabled = true;
 
         try {
+            // Get token from URL parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+
+            const headers = {
+                'Content-Type': 'application/json',
+            };
+
+            // Add authentication headers
+            if (token) {
+                headers['Authorization'] = 'Bearer ' + token;
+                headers['X-Auth-Token'] = token;
+            }
+
             const response = await fetch('/profile-completion', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: headers,
                 body: JSON.stringify({
                     full_name: fullName,
                     email: email,
@@ -455,7 +467,17 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 showMessage('Profile saved successfully! Redirecting...', 'success');
                 setTimeout(() => {
-                    window.location.href = data.redirect_url || '/dashboard';
+                    // Get token from URL parameter to include in dashboard redirect
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const token = urlParams.get('token');
+
+                    // If we have a redirect URL, use it, otherwise construct dashboard URL with token
+                    let redirectUrl = data.redirect_url || '/dashboard';
+                    if (token && redirectUrl === '/dashboard') {
+                        redirectUrl = `/dashboard?token=${token}`;
+                    }
+
+                    window.location.href = redirectUrl;
                 }, 1500);
             } else {
                 showMessage(data.message || 'Failed to save profile', 'error');
