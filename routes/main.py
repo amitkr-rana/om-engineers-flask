@@ -252,26 +252,40 @@ def logout():
 @main_bp.route('/dashboard')
 def dashboard():
     """User dashboard after successful OTP login"""
-    # Get phone number from URL parameter (primary) or session (fallback)
-    customer_phone = request.args.get('phone', '').strip()
-    if not customer_phone:
-        customer_phone = session.get('customer_phone', '')
-
     customer_name = 'Guest'
     customer = None
+    customer_phone = ''
 
-    # Look up customer in database by phone number
-    if customer_phone:
+    # Priority 1: Use customer_id from session (after account selection)
+    customer_id = session.get('customer_id')
+    if customer_id:
         try:
-            customer = Customer.get_by_phone(customer_phone)
+            customer = Customer.query.get(customer_id)
             if customer:
                 customer_name = customer.name
+                customer_phone = customer.phone
         except Exception as e:
             pass
+
+    # Priority 2: Look up by phone number from URL parameter or session
+    if not customer:
+        customer_phone = request.args.get('phone', '').strip()
+        if not customer_phone:
+            customer_phone = session.get('customer_phone', '')
+
+        if customer_phone:
+            try:
+                customer = Customer.get_by_phone(customer_phone)
+                if customer:
+                    customer_name = customer.name
+            except Exception as e:
+                pass
 
     # Final fallback to session data
     if not customer:
         customer_name = session.get('customer_name', 'Guest')
+        if not customer_phone:
+            customer_phone = session.get('customer_phone', '')
 
     # Fetch upcoming appointments for the customer
     upcoming_appointments = []
@@ -470,12 +484,13 @@ def account_selection_post():
         # Store customer information in session
         session['customer_id'] = customer.id
         session['customer_phone'] = customer.phone
+        session['customer_name'] = customer.name
         session.pop('phone_number', None)  # Remove temporary phone number
 
         return jsonify({
             'success': True,
             'message': 'Account selected successfully',
-            'redirect_url': url_for('main.dashboard', phone=phone_number)
+            'redirect_url': url_for('main.dashboard')
         }), 200
 
     except Exception as e:
